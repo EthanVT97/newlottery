@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: mm-2d3d-lottery
+    env: static
+    buildCommand: echo "Static site, no build needed"
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: SUPABASE_URL
+        value: https://fikjryqofcauqezmefqr.supabase.co
+      - key: SUPABASE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpa2pyeXFvZmNhdXFlem1lZnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU0Njc4NjQsImV4cCI6MjA1MTA0Mzg2NH0.vFCkc7lzVaMZihd-lOb4ywbFHJO2kItAfRDyRaETAnc

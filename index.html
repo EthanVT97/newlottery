@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM Lottery - မြန်မာ့ထီ</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fikjryqofcauqezmefqr.supabase.co https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; connect-src 'self' https://fikjryqofcauqezmefqr.supabase.co wss://fikjryqofcauqezmefqr.supabase.co;">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-ticket-perforated-fill me-2"></i>MM Lottery
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#games">
+                            <i class="bi bi-grid-3x3-gap me-1"></i>ဂိမ်းများ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#schedule">
+                            <i class="bi bi-calendar-event me-1"></i>အချိန်ဇယား
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center" id="authButtons">
+                    <!-- Auth buttons will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <!-- Hero Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <h1 class="display-4 mb-3">
+                            <i class="bi bi-ticket-perforated-fill text-primary me-2"></i>မြန်မာ့ထီ
+                        </h1>
+                        <p class="lead mb-4">2D, 3D, Thai နှင့် Lao ထီများကို တစ်နေရာတည်းတွင် လွယ်ကူစွာ ထိုးနိုင်ပါပြီ</p>
+                        <div id="heroButtons" class="d-flex justify-content-center gap-3">
+                            <!-- Hero buttons will be dynamically added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Games Section -->
+        <div class="row mb-4" id="games">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="bi bi-grid-3x3-gap me-2"></i>ကစားနိုင်သော ဂိမ်းများ
+                </h2>
+                <div class="row g-4">
+                    <!-- 2D Game Card -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 shadow-sm game-card" data-game="2d">
+                            <div class="card-body text-center">
+                                <i class="bi bi-2-circle display-4 text-primary mb-3"></i>
+                                <h3>2D</h3>
+                                <p class="text-muted">နေ့စဉ် 2 ကြိမ်ထွက်</p>
+                                <button class="btn btn-primary mt-2">
+                                    <i class="bi bi-play-circle me-1"></i>ကစားမည်
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 3D Game Card -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 shadow-sm game-card" data-game="3d">
+                            <div class="card-body text-center">
+                                <i class="bi bi-3-circle display-4 text-success mb-3"></i>
+                                <h3>3D</h3>
+                                <p class="text-muted">လစဉ် 2 ကြိမ်ထွက်</p>
+                                <button class="btn btn-success mt-2">
+                                    <i class="bi bi-play-circle me-1"></i>ကစားမည်
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Thai Game Card -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 shadow-sm game-card" data-game="thai">
+                            <div class="card-body text-center">
+                                <i class="bi bi-flag-fill display-4 text-danger mb-3"></i>
+                                <h3>Thai Lottery</h3>
+                                <p class="text-muted">လစဉ် 2 ကြိမ်ထွက်</p>
+                                <button class="btn btn-danger mt-2">
+                                    <i class="bi bi-play-circle me-1"></i>ကစားမည်
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Lao Game Card -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 shadow-sm game-card" data-game="lao">
+                            <div class="card-body text-center">
+                                <i class="bi bi-flag display-4 text-info mb-3"></i>
+                                <h3>Lao Lottery</h3>
+                                <p class="text-muted">လစဉ် 4 ကြိမ်ထွက်</p>
+                                <button class="btn btn-info mt-2">
+                                    <i class="bi bi-play-circle me-1"></i>ကစားမည်
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Section -->
+        <div class="row mb-4" id="schedule">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="bi bi-calendar-event me-2"></i>ထီထွက်ချိန် အချိန်ဇယား
+                </h2>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <!-- 2D Schedule -->
+                            <div class="col-md-6 col-lg-3">
+                                <h4 class="mb-3">2D ထွက်ချိန်</h4>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="bi bi-clock me-2"></i>မနက်ပိုင်း - 12:01 PM
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-clock me-2"></i>ညနေပိုင်း - 4:30 PM
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- 3D Schedule -->
+                            <div class="col-md-6 col-lg-3">
+                                <h4 class="mb-3">3D ထွက်ချိန်</h4>
+                                <ul class="list-unstyled">
+                                    <li>
+                                        <i class="bi bi-calendar me-2"></i>လစဉ် ၁ရက်နေ့ နှင့် ၁၆ရက်နေ့
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- Thai Schedule -->
+                            <div class="col-md-6 col-lg-3">
+                                <h4 class="mb-3">Thai Lottery</h4>
+                                <ul class="list-unstyled">
+                                    <li>
+                                        <i class="bi bi-calendar me-2"></i>လစဉ် ၁ရက်နေ့ နှင့် ၁၆ရက်နေ့
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- Lao Schedule -->
+                            <div class="col-md-6 col-lg-3">
+                                <h4 class="mb-3">Lao Lottery</h4>
+                                <ul class="list-unstyled">
+                                    <li>
+                                        <i class="bi bi-calendar me-2"></i>လစဉ် ၁၀ရက်၊ ၂၅ရက်နေ့
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>MM Lottery</h5>
+                    <p class="mb-0"> 2024 All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="#" class="text-light text-decoration-none me-3">Terms of Service</a>
+                    <a href="#" class="text-light text-decoration-none">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- App Scripts -->
+    <script type="module" src="js/config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/index.js"></script>
+</body>
+</html>

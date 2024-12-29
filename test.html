@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Test</title>
+</head>
+<body>
+    <h1>Supabase Test</h1>
+    <button onclick="testLogin()">Test User Login</button>
+    <div id="result"></div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://dxuhwqgbwvmtpgwqsceh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4dWh3cWdid3ZtdHBnd3FzY2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDM4NzIyMjAsImV4cCI6MjAxOTQ0ODIyMH0.HRBVkI1DUvPe0-3FLGqTtJxEFp3_sCXg5YkEK0K4vwI';
+        
+        // Initialize the Supabase client
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: 'user@mm2d3d.com',
+                    password: 'user123'
+                });
+
+                if (error) throw error;
+
+                resultDiv.innerHTML = `Success! User ID: ${data.user.id}`;
+                console.log('Login successful:', data);
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
+                console.error('Login error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

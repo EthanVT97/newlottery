@@ -1,0 +1,62 @@
+/* Toast notification styles */
+.toast {
+    color: #000 !important;
+    font-weight: 500;
+}
+
+.toast-success {
+    background-color: #d4edda !important;
+    border-color: #c3e6cb !important;
+}
+
+.toast-error {
+    background-color: #f8d7da !important;
+    border-color: #f5c6cb !important;
+}
+
+.toast-warning {
+    background-color: #fff3cd !important;
+    border-color: #ffeeba !important;
+}
+
+.toast-info {
+    background-color: #d1ecf1 !important;
+    border-color: #bee5eb !important;
+}
+
+/* General styles */
+.badge {
+    font-weight: 500;
+}
+
+.table th {
+    font-weight: 500;
+}
+
+.card-header {
+    font-weight: 500;
+}
+
+/* Balance display */
+#userBalance {
+    font-weight: 500;
+}
+
+/* Form elements */
+.form-label {
+    font-weight: 500;
+}
+
+.btn {
+    font-weight: 500;
+}
+
+/* Win amount display */
+#winAmount {
+    font-weight: 600;
+}
+
+/* Results display */
+#daily2D, #daily3D {
+    font-weight: 600;
+}

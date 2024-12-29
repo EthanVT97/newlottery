@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">2D3D Lottery</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="customer.html"><i class="bi bi-house"></i> ပင်မ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="2d.html"><i class="bi bi-2-circle"></i> 2D</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="3d.html"><i class="bi bi-3-circle"></i> 3D</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="thai.html"><i class="bi bi-flag"></i> Thai</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="lao.html"><i class="bi bi-flag"></i> Lao</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center text-white">
+                    <div class="me-3">
+                        <i class="bi bi-wallet2"></i> လက်ကျန်: <span id="userBalance">0</span> MMK
+                    </div>
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <span class="nav-link">
+                                <i class="bi bi-person-circle"></i>
+                                <span id="userName">Loading...</span>
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <button class="btn btn-outline-light ms-2" id="logoutButton">
+                                <i class="bi bi-box-arrow-right"></i> ထွက်ရန်
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Today's Results -->
+        <div class="row mb-4">
+            <!-- 2D Results -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-2-circle"></i> 2D ပေါက်ဂဏန်းများ</h5>
+                        <span class="badge bg-light text-dark" id="next2DTime">--:--</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h6>မနက်ပိုင်း (9:30 AM)</h6>
+                                <h3 id="morning2D">--</h3>
+                            </div>
+                            <div class="col-6">
+                                <h6>ညနေပိုင်း (2:00 PM)</h6>
+                                <h3 id="evening2D">--</h3>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="2d.html" class="btn btn-primary">
+                                <i class="bi bi-dice-5"></i> 2D ထိုးရန်
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3D Results -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-3-circle"></i> 3D ပေါက်ဂဏန်းများ</h5>
+                        <span class="badge bg-light text-dark" id="next3DTime">--:--</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <h6>နေ့စဉ်ပေါက်ဂဏန်း</h6>
+                            <h3 id="daily3D">---</h3>
+                            <p class="text-muted mb-0" id="last3DDate">--/--/----</p>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="3d.html" class="btn btn-primary">
+                                <i class="bi bi-dice-5"></i> 3D ထိုးရန်
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thai Lottery Results -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-flag"></i> Thai Lottery ပေါက်ဂဏန်းများ</h5>
+                        <span class="badge bg-light text-dark" id="nextThaiTime">--/--/----</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-12 mb-3">
+                                <h6>ပထမဆု</h6>
+                                <h3 id="thaiFirst">------</h3>
+                            </div>
+                            <div class="col-6">
+                                <h6>နောက်ဆုံး ၂ လုံး</h6>
+                                <h3 id="thaiLast2">--</h3>
+                            </div>
+                            <div class="col-6">
+                                <h6>နောက်ဆုံး ၃ လုံး</h6>
+                                <h3 id="thaiLast3">---</h3>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="thai.html" class="btn btn-primary">
+                                <i class="bi bi-dice-5"></i> Thai Lottery ထိုးရန်
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lao Lottery Results -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-flag"></i> Lao Lottery ပေါက်ဂဏန်းများ</h5>
+                        <span class="badge bg-light text-dark" id="nextLaoTime">--/--/----</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-12 mb-3">
+                                <h6>ပထမဆု</h6>
+                                <h3 id="laoFirst">------</h3>
+                            </div>
+                            <div class="col-6">
+                                <h6>နောက်ဆုံး ၂ လုံး</h6>
+                                <h3 id="laoLast2">--</h3>
+                            </div>
+                            <div class="col-6">
+                                <h6>နောက်ဆုံး ၃ လုံး</h6>
+                                <h3 id="laoLast3">---</h3>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="lao.html" class="btn btn-primary">
+                                <i class="bi bi-dice-5"></i> Lao Lottery ထိုးရန်
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Bets -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> သင်၏ထီထိုးမှတ်တမ်းများ</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>အချိန်</th>
+                                <th>အမျိုးအစား</th>
+                                <th>ဂဏန်း</th>
+                                <th>ငွေပမာဏ</th>
+                                <th>အနိုင်ရငွေ</th>
+                                <th>အခြေအနေ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentBets">
+                            <!-- Bets will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-trophy"></i> အနိုင်ရသောပွဲများ</h5>
+                        <h3 class="mb-0" id="totalWins">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-x-circle"></i> မထီသောပွဲများ</h5>
+                        <h3 class="mb-0" id="totalLosses">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-clock"></i> စောင့်ဆိုင်းဆဲပွဲများ</h5>
+                        <h3 class="mb-0" id="totalPending">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">ပရိုဖိုင်</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="profileForm">
+                        <div class="mb-3">
+                            <label class="form-label">အီးမေးလ်</label>
+                            <input type="email" class="form-control" id="profileEmail" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ဖုန်းနံပါတ်</label>
+                            <input type="tel" class="form-control" id="profilePhone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">KPay နံပါတ်</label>
+                            <input type="tel" class="form-control" id="profileKPay" name="kpay">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Wave Pay နံပါတ်</label>
+                            <input type="tel" class="form-control" id="profileWave" name="wave">
+                        </div>
+                        <button type="submit" class="btn btn-primary">သိမ်းမည်</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top-up Modal -->
+    <div class="modal fade" id="topupModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">ငွေဖြည့်မည်</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <h6 class="mb-2">ငွေလက်ခံမည့်အကောင့်များ</h6>
+                        <p class="mb-1"><strong>KPay:</strong> <span id="adminKPay">09-XXX-XXX-XXX</span></p>
+                        <p class="mb-1"><strong>Wave Pay:</strong> <span id="adminWave">09-XXX-XXX-XXX</span></p>
+                        <p class="mb-0 text-danger">* ငွေလွှဲပြီးပါက ငွေလွှဲပြေစာကို ရိုက်ထည့်ပေးပါ</p>
+                    </div>
+                    <form id="topupForm">
+                        <div class="mb-3">
+                            <label class="form-label">ငွေပမာဏ</label>
+                            <input type="number" class="form-control" id="topupAmount" name="amount" min="1000" step="1000" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ငွေလွှဲမည့်နည်းလမ်း</label>
+                            <select class="form-select" id="paymentMethod" name="method" required>
+                                <option value="">ရွေးချယ်ပါ</option>
+                                <option value="KPAY">KBZ Pay</option>
+                                <option value="WAVE">Wave Pay</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ငွေလွှဲပြေစာဓာတ်ပုံ</label>
+                            <input type="file" class="form-control" id="receiptImage" name="receipt" accept="image/*" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> တင်သွင်းမည်
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="js/customer.js"></script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MM Lottery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container">
+        <div class="row justify-content-center min-vh-100 align-items-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <a href="index.html" class="text-decoration-none">
+                                <i class="bi bi-ticket-perforated-fill text-primary display-5"></i>
+                                <h4 class="mb-0 mt-2">MM Lottery</h4>
+                                <p class="text-muted">မြန်မာ့ထီ</p>
+                            </a>
+                        </div>
+                        
+                        <!-- Login Form -->
+                        <form id="loginForm" novalidate>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">အီးမေးလ်</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-envelope"></i>
+                                    </span>
+                                    <input type="email" class="form-control" id="email" required autocomplete="email">
+                                </div>
+                                <div class="invalid-feedback">မှန်ကန်သော အီးမေးလ်ထည့်သွင်းပါ</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">စကားဝှက်</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-lock"></i>
+                                    </span>
+                                    <input type="password" class="form-control" id="password" required autocomplete="current-password">
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback">စကားဝှက်ထည့်သွင်းပါ</div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-7">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="rememberMe" checked>
+                                        <label class="form-check-label" for="rememberMe">မှတ်ထားမည်</label>
+                                    </div>
+                                </div>
+                                <div class="col-5 text-end">
+                                    <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
+                                        စကားဝှက်မေ့နေပါသလား?
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>ဝင်ရောက်မည်
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
+                                    <i class="bi bi-person-plus me-2"></i>အကောင့်အသစ်ဖွင့်မည်
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-plus me-2"></i>အကောင့်အသစ်ဖွင့်ခြင်း
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="registerForm" novalidate>
+                        <div class="mb-3">
+                            <label for="regName" class="form-label">အမည်</label>
+                            <input type="text" class="form-control" id="regName" required>
+                            <div class="invalid-feedback">အမည်ထည့်သွင်းပါ</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regPhone" class="form-label">ဖုန်းနံပါတ်</label>
+                            <input type="tel" class="form-control" id="regPhone" required pattern="[0-9]{9,11}">
+                            <div class="invalid-feedback">မှန်ကန်သော ဖုန်းနံပါတ်ထည့်သွင်းပါ</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regEmail" class="form-label">အီးမေးလ်</label>
+                            <input type="email" class="form-control" id="regEmail" required>
+                            <div class="invalid-feedback">မှန်ကန်သော အီးမေးလ်ထည့်သွင်းပါ</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regPassword" class="form-label">စကားဝှက်</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="regPassword" required minlength="6">
+                                <button class="btn btn-outline-secondary" type="button" id="toggleRegPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback">အနည်းဆုံး စာလုံး ၆ လုံးပါဝင်ရမည်</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regConfirmPassword" class="form-label">စကားဝှက်အတည်ပြုပါ</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="regConfirmPassword" required>
+                                <button class="btn btn-outline-secondary" type="button" id="toggleRegConfirmPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback">စကားဝှက်များ မတူညီပါ</div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-person-plus me-2"></i>အကောင့်ဖွင့်မည်
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-key me-2"></i>စကားဝှက်ပြန်လည်သတ်မှတ်ခြင်း
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="resetPasswordForm" novalidate>
+                        <div class="mb-3">
+                            <label for="resetEmail" class="form-label">အီးမေးလ်</label>
+                            <input type="email" class="form-control" id="resetEmail" required>
+                            <div class="invalid-feedback">မှန်ကန်သော အီးမေးလ်ထည့်သွင်းပါ</div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send me-2"></i>ပို့မည်
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- App Scripts -->
+    <script type="module" src="js/config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/middleware.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/login.js"></script>
+</body>
+</html>

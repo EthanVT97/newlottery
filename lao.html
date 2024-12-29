@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lao Lottery - MM Lottery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">MM Lottery</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="2d.html">2D</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="3d.html">3D</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="thai.html">Thai</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="lao.html">Lao</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center text-white">
+                    <i class="bi bi-wallet2 me-2"></i>
+                    <span id="userBalance">0</span>
+                    <button class="btn btn-outline-light ms-3" id="logoutBtn">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row g-4">
+            <!-- Latest Results -->
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">နောက်ဆုံးထွက်ဂဏန်းများ</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <h6 class="text-muted mb-2">ပထမဆု</h6>
+                                <h3 id="laoFirst" class="display-4 mb-0">------</h3>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-muted mb-2">နောက်သုံးလုံး</h6>
+                                <h3 id="laoLastThree" class="display-4 mb-0">---</h3>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-muted mb-2">နောက်နှစ်လုံး</h6>
+                                <h3 id="laoLastTwo" class="display-4 mb-0">--</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Betting Form -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">ထိုးမည့်ဂဏန်း</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="betForm">
+                            <div class="mb-3">
+                                <label class="form-label">ထိုးနည်း</label>
+                                <select class="form-select" id="betMethod" required>
+                                    <option value="FIRST">ပထမဆု (6 လုံး)</option>
+                                    <option value="LAST_THREE">နောက်သုံးလုံး</option>
+                                    <option value="LAST_TWO">နောက်နှစ်လုံး</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">ဂဏန်း</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="betNumber" required>
+                                    <button type="button" class="btn btn-outline-secondary" id="randomNumberBtn">
+                                        <i class="bi bi-shuffle"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text" id="numberHelp">ဂဏန်းခြောက်လုံး ထည့်သွင်းပါ (000000-999999)</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="betAmount" class="form-label">ထိုးမည့်ငွေပမာဏ</label>
+                                <input type="number" class="form-control" id="betAmount" min="100" step="100" required>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-1" data-amount="100">100</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-1" data-amount="500">500</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-1" data-amount="1000">1000</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-1" data-amount="5000">5000</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-amount="10000">10000</button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">အနိုင်ရငွေ</label>
+                                <h4 id="winAmount" class="text-success mb-0">0</h4>
+                            </div>
+
+                            <div class="mb-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> ထည့်မည်
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Payout Rates -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">ပေါက်ဂဏန်းနှုန်းထား</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="text-center mb-3">
+                                    <h6>ပထမဆု</h6>
+                                    <h4>2500x</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center mb-3">
+                                    <h6>နောက်သုံးလုံး</h6>
+                                    <h4>500x</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center mb-3">
+                                    <h6>နောက်နှစ်လုံး</h6>
+                                    <h4>85x</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selected Numbers -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">ရွေးချယ်ထားသောဂဏန်းများ</h5>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearAllBets()">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ဂဏန်း</th>
+                                        <th>ထိုးနည်း</th>
+                                        <th>ထိုးကြေး</th>
+                                        <th>အနိုင်ရငွေ</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="selectedNumbers">
+                                    <!-- Selected numbers will be added here -->
+                                </tbody>
+                                <tfoot class="table-info">
+                                    <tr>
+                                        <td colspan="2">စုစုပေါင်း</td>
+                                        <td id="totalAmount">0</td>
+                                        <td id="totalWinAmount">0</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-success" id="submitBets" disabled>
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Betting History -->
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">လောင်းကစားမှတ်တမ်း</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="bettingHistory" class="list-group list-group-flush">
+                            <!-- Betting history will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { checkAuthAndRedirect } from './js/auth-check.js';
+        document.addEventListener('DOMContentLoaded', checkAuthAndRedirect);
+    </script>
+    <script src="js/config.js" type="module"></script>
+    <script src="js/utils.js" type="module"></script>
+    <script src="js/betting.js" type="module"></script>
+    <script src="js/lao.js" type="module"></script>
+</body>
+</html>
