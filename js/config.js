@@ -9,7 +9,8 @@ export const APP_CONFIG = {
     version: '1.0.3',
     locale: 'my-MM',
     currency: 'MMK',
-    timezone: 'Asia/Yangon'
+    timezone: 'Asia/Yangon',
+    siteUrl: 'https://mm2d3d.onrender.com'
 };
 
 /**
@@ -19,7 +20,15 @@ const SUPABASE_URL = 'https://fikjryqofcauqezmefqr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpa2pyeXFvZmNhdXFlem1lZnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU0Njc4NjQsImV4cCI6MjA1MTA0Mzg2NH0.vFCkc7lzVaMZihd-lOb4ywbFHJO2kItAfRDyRaETAnc';
 
 // Initialize Supabase client
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storage: window.localStorage,
+        storageKey: 'mm-2d3d-auth'
+    }
+});
 
 // Initialize auth state
 supabase.auth.onAuthStateChange((event, session) => {
