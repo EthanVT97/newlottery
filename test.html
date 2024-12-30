@@ -1,37 +1,187 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Supabase Test</title>
+    <title>2D3D System Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Supabase Test</h1>
-    <button onclick="testLogin()">Test User Login</button>
-    <div id="result"></div>
+<body class="container mt-4">
+    <h1>2D3D System Test</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Authentication Tests</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary mb-2" onclick="testUserLogin()">Test User Login</button>
+                    <button class="btn btn-warning mb-2" onclick="testAdminLogin()">Test Admin Login</button>
+                    <button class="btn btn-secondary mb-2" onclick="testLogout()">Test Logout</button>
+                </div>
+            </div>
 
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Database Tests</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-info mb-2" onclick="test2DResults()">Test 2D Results</button>
+                    <button class="btn btn-success mb-2" onclick="testBets()">Test Bets</button>
+                    <button class="btn btn-danger mb-2" onclick="testTransactions()">Test Transactions</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Test Results</h5>
+                </div>
+                <div class="card-body">
+                    <pre id="result" class="bg-light p-3" style="max-height: 400px; overflow-y: auto;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const SUPABASE_URL = 'https://dxuhwqgbwvmtpgwqsceh.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4dWh3cWdid3ZtdHBnd3FzY2VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDM4NzIyMjAsImV4cCI6MjAxOTQ0ODIyMH0.HRBVkI1DUvPe0-3FLGqTtJxEFp3_sCXg5YkEK0K4vwI';
+        const SUPABASE_URL = 'https://fikjryqofcauqezmefqr.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpa2pyeXFvZmNhdXFlem1lZnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU0Njc4NjQsImV4cCI6MjA1MTA0Mzg2NH0.vFCkc7lzVaMZihd-lOb4ywbFHJO2kItAfRDyRaETAnc';
         
-        // Initialize the Supabase client
-        const { createClient } = supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const resultDiv = document.getElementById('result');
 
-        async function testLogin() {
-            const resultDiv = document.getElementById('result');
+        function log(message, isError = false) {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = isError ? 'text-danger' : 'text-success';
+            resultDiv.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        }
+
+        async function testUserLogin() {
             try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: 'user@mm2d3d.com',
-                    password: 'user123'
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'user@gmail.com',
+                    password: '123456'
                 });
 
                 if (error) throw error;
-
-                resultDiv.innerHTML = `Success! User ID: ${data.user.id}`;
-                console.log('Login successful:', data);
+                log(' User login successful: ' + data.user.email);
             } catch (error) {
-                resultDiv.innerHTML = `Error: ${error.message}`;
-                console.error('Login error:', error);
+                log(' User login error: ' + error.message, true);
+            }
+        }
+
+        async function testAdminLogin() {
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'admin@gmail.com',
+                    password: '123456'
+                });
+
+                if (error) throw error;
+                log(' Admin login successful: ' + data.user.email);
+            } catch (error) {
+                log(' Admin login error: ' + error.message, true);
+            }
+        }
+
+        async function testLogout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                log(' Logout successful');
+            } catch (error) {
+                log(' Logout error: ' + error.message, true);
+            }
+        }
+
+        async function test2DResults() {
+            try {
+                // Get current session
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) throw new Error('Please login first');
+
+                // Try to create a new 2D result
+                const testResult = {
+                    number: '12',
+                    date: new Date().toISOString().split('T')[0],
+                    time: '12:01:00',
+                    created_by: session.user.id
+                };
+
+                const { data, error } = await supabase
+                    .from('results_2d')
+                    .insert(testResult)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                log(' Created 2D result: ' + JSON.stringify(data));
+
+                // Fetch all results
+                const { data: allResults, error: fetchError } = await supabase
+                    .from('results_2d')
+                    .select('*')
+                    .limit(5);
+
+                if (fetchError) throw fetchError;
+                log(' Retrieved 2D results: ' + JSON.stringify(allResults));
+            } catch (error) {
+                log(' 2D results test error: ' + error.message, true);
+            }
+        }
+
+        async function testBets() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) throw new Error('Please login first');
+
+                const testBet = {
+                    user_id: session.user.id,
+                    type: '2D',
+                    number: '12',
+                    amount: 1000,
+                    bet_method: 'R',
+                    date: new Date().toISOString().split('T')[0],
+                    time: '12:01:00'
+                };
+
+                const { data, error } = await supabase
+                    .from('bets')
+                    .insert(testBet)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                log(' Created bet: ' + JSON.stringify(data));
+            } catch (error) {
+                log(' Bets test error: ' + error.message, true);
+            }
+        }
+
+        async function testTransactions() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) throw new Error('Please login first');
+
+                const testTransaction = {
+                    user_id: session.user.id,
+                    type: 'deposit',
+                    amount: 10000,
+                    reference_id: 'TEST-' + Date.now()
+                };
+
+                const { data, error } = await supabase
+                    .from('transactions')
+                    .insert(testTransaction)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                log(' Created transaction: ' + JSON.stringify(data));
+            } catch (error) {
+                log(' Transactions test error: ' + error.message, true);
             }
         }
     </script>

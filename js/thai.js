@@ -1,330 +1,348 @@
 // thai.js - Thai lottery game logic
 import { supabase } from './config.js';
-import { showToast, formatDateTime, formatCurrency } from './utils.js';
-import { placeBet, getBettingHistory, getLatestResults, isBettingAllowed, formatBetType, getStatusBadge, PAYOUT_RATES, calculateWinAmount } from './betting.js';
+import { showToast, formatDateTime, formatMoney } from './utils.js';
+import { 
+    placeBet,
+    getActiveSessions,
+    getUserBets,
+    formatBetType,
+    getStatusBadge,
+    PAYOUT_RATES 
+} from './database.js';
 
-let currentUser = null;
-let userProfile = null;
+const DEFAULT_USER_ID = 1; // Default user ID for the single user
 let selectedBets = [];
+let currentSession = null;
+let activeSessions = [];
 
 // Initialize the page
 async function initializePage() {
-    // Check authentication
-    const { data: { user }, error } = await supabase.auth.getSession();
-    if (error || !user) {
-        window.location.href = 'index.html';
-        return;
-    }
-    currentUser = user;
-
-    // Get user profile
-    const { data: profile } = await supabase.from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-    
-    if (profile) {
-        userProfile = profile;
-        updateBalance(profile.balance);
-    }
-
-    // Set up real-time subscription for balance updates
-    const balanceSubscription = supabase
-        .channel('balance_changes')
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'profiles',
-            filter: `id=eq.${user.id}`
-        }, payload => {
-            updateBalance(payload.new.balance);
-        })
-        .subscribe();
-
-    // Load latest results
-    loadLatestResults();
-
-    // Load betting history
-    loadBettingHistory();
-
-    // Set up event listeners
-    setupEventListeners();
-}
-
-// Load latest Thai lottery results
-async function loadLatestResults() {
-    const { data: results, error } = await supabase
-        .from('lottery_results')
-        .select('*')
-        .eq('type', 'THAI')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-    if (error) {
-        showToast('ပေါက်ဂဏန်းများ ရယူ၍မရပါ။', 'error');
-        return;
-    }
-
-    if (results) {
-        document.getElementById('thaiFirst').textContent = results.number || '------';
-        document.getElementById('thaiLastThree').textContent = results.number ? results.number.slice(-3) : '---';
-        document.getElementById('thaiLastTwo').textContent = results.number ? results.number.slice(-2) : '--';
+    try {
+        // Update balance display
+        await updateBalanceDisplay();
+        
+        // Load active sessions
+        await loadActiveSessions();
+        
+        // Load betting history
+        await loadBettingHistory();
+        
+        // Setup event listeners
+        setupEventListeners();
+        
+    } catch (error) {
+        console.error('Error initializing page:', error);
+        showToast('error', 'Error loading page data');
     }
 }
 
-// Load betting history
-async function loadBettingHistory() {
-    const { data: bets, error } = await getBettingHistory('THAI');
+// Load active betting sessions
+async function loadActiveSessions() {
+    try {
+        activeSessions = await getActiveSessions();
+        if (activeSessions && activeSessions.length > 0) {
+            currentSession = activeSessions[0];
+            updateSessionDisplay();
+        }
+    } catch (error) {
+        console.error('Error loading sessions:', error);
+        showToast('error', 'Error loading betting sessions');
+    }
+}
+
+// Update the display of current session and results
+function updateSessionDisplay() {
+    const resultsContainer = document.getElementById('lotteryResults');
+    if (!resultsContainer) return;
+
+    resultsContainer.innerHTML = '';
     
-    if (error) {
-        showToast('လောင်းကစားမှတ်တမ်း ရယူ၍မရပါ။', 'error');
+    if (!activeSessions || activeSessions.length === 0) {
+        resultsContainer.innerHTML = '<div class="text-center text-muted">No active sessions</div>';
         return;
     }
 
-    const historyContainer = document.getElementById('bettingHistory');
-    historyContainer.innerHTML = '';
-
-    if (bets && bets.length > 0) {
-        bets.forEach(bet => {
-            const item = document.createElement('div');
-            item.className = 'list-group-item';
-            item.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">${bet.number}</h6>
-                        <small class="text-muted">${formatDateTime(bet.created_at)}</small>
-                    </div>
-                    <div class="text-end">
-                        <div>${formatCurrency(bet.amount)}</div>
-                        <span class="badge ${getStatusBadge(bet.status)}">${bet.status}</span>
-                    </div>
+    activeSessions.forEach(session => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'list-group-item';
+        
+        const time = formatDateTime(session.created_at);
+        const result = session.result || '--';
+        const status = getStatusBadge(session.status);
+        
+        resultItem.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">${result}</h5>
+                    <small class="text-muted">${time}</small>
                 </div>
-            `;
-            historyContainer.appendChild(item);
-        });
-    } else {
-        historyContainer.innerHTML = '<div class="text-center p-3 text-muted">လောင်းကစားမှတ်တမ်း မရှိသေးပါ။</div>';
-    }
+                <div>
+                    ${status}
+                </div>
+            </div>
+        `;
+        
+        resultsContainer.appendChild(resultItem);
+    });
 }
 
-// Set up event listeners
+// Setup event listeners for the page
 function setupEventListeners() {
-    // Bet form submission
-    document.getElementById('betForm').addEventListener('submit', handleBetSubmission);
+    // Random number button
+    const randomBtn = document.getElementById('randomNumberBtn');
+    if (randomBtn) {
+        randomBtn.addEventListener('click', () => {
+            const betInput = document.getElementById('betNumber');
+            if (betInput) {
+                betInput.value = generateRandomNumber();
+            }
+        });
+    }
 
     // Quick amount buttons
-    document.querySelectorAll('[data-amount]').forEach(button => {
+    const amountButtons = document.querySelectorAll('[data-amount]');
+    amountButtons.forEach(button => {
         button.addEventListener('click', () => {
-            document.getElementById('betAmount').value = button.dataset.amount;
-            updateWinAmount();
+            const amountInput = document.getElementById('betAmount');
+            if (amountInput) {
+                amountInput.value = button.dataset.amount;
+                updatePotentialWin();
+            }
         });
     });
 
-    // Random number generator
-    document.getElementById('randomNumberBtn').addEventListener('click', generateRandomNumber);
+    // Bet amount input
+    const betAmountInput = document.getElementById('betAmount');
+    if (betAmountInput) {
+        betAmountInput.addEventListener('input', updatePotentialWin);
+    }
 
-    // Bet method change
-    document.getElementById('betMethod').addEventListener('change', handleBetMethodChange);
-
-    // Amount input change
-    document.getElementById('betAmount').addEventListener('input', updateWinAmount);
+    // Bet form
+    const betForm = document.getElementById('betForm');
+    if (betForm) {
+        betForm.addEventListener('submit', handleAddBet);
+    }
 
     // Submit all bets button
-    document.getElementById('submitBets').addEventListener('click', submitAllBets);
+    const submitBetsBtn = document.getElementById('submitBets');
+    if (submitBetsBtn) {
+        submitBetsBtn.addEventListener('click', handleSubmitAllBets);
+    }
 
-    // Logout button
-    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+    // Clear all bets button
+    const clearAllBtn = document.getElementById('clearAllBets');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', () => {
+            selectedBets = [];
+            updateSelectedBetsDisplay();
+        });
+    }
+
+    // Bet method selector
+    const methodSelector = document.getElementById('betMethod');
+    if (methodSelector) {
+        methodSelector.addEventListener('change', handleBetMethodChange);
+    }
+}
+
+// Update user's balance display
+async function updateBalanceDisplay() {
+    try {
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('balance')
+            .eq('id', DEFAULT_USER_ID)
+            .single();
+
+        if (error) throw error;
+
+        const balanceDisplay = document.getElementById('userBalance');
+        if (balanceDisplay && user) {
+            balanceDisplay.textContent = formatMoney(user.balance);
+        }
+    } catch (error) {
+        console.error('Error updating balance:', error);
+    }
 }
 
 // Handle bet method change
-function handleBetMethodChange() {
-    const method = document.getElementById('betMethod').value;
+function handleBetMethodChange(e) {
+    const method = e.target.value;
     const numberInput = document.getElementById('betNumber');
-    const numberHelp = document.getElementById('numberHelp');
-
-    switch (method) {
-        case 'FIRST':
-            numberInput.maxLength = 6;
-            numberHelp.textContent = 'ဂဏန်းခြောက်လုံး ထည့်သွင်းပါ (000000-999999)';
-            break;
-        case 'LAST_THREE':
-            numberInput.maxLength = 3;
-            numberHelp.textContent = 'ဂဏန်းသုံးလုံး ထည့်သွင်းပါ (000-999)';
-            break;
-        case 'LAST_TWO':
-            numberInput.maxLength = 2;
-            numberHelp.textContent = 'ဂဏန်းနှစ်လုံး ထည့်သွင်းပါ (00-99)';
-            break;
+    const randomBtn = document.getElementById('randomNumberBtn');
+    
+    if (method === 'first3' || method === 'last3') {
+        numberInput.maxLength = 3;
+        numberInput.placeholder = '3 digits';
+        randomBtn.dataset.method = method;
+    } else if (method === 'first2' || method === 'last2') {
+        numberInput.maxLength = 2;
+        numberInput.placeholder = '2 digits';
+        randomBtn.dataset.method = method;
     }
-
+    
     numberInput.value = '';
-    updateWinAmount();
+    updatePotentialWin();
 }
 
-// Generate random number based on selected method
+// Generate a random number based on bet method
 function generateRandomNumber() {
     const method = document.getElementById('betMethod').value;
-    let randomNum;
-
+    let digits;
+    
     switch (method) {
-        case 'FIRST':
-            randomNum = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+        case 'first3':
+        case 'last3':
+            digits = 3;
             break;
-        case 'LAST_THREE':
-            randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        case 'first2':
+        case 'last2':
+            digits = 2;
             break;
-        case 'LAST_TWO':
-            randomNum = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-            break;
+        default:
+            digits = 2;
     }
-
-    document.getElementById('betNumber').value = randomNum;
+    
+    return String(Math.floor(Math.random() * Math.pow(10, digits))).padStart(digits, '0');
 }
 
-// Handle bet submission
-async function handleBetSubmission(event) {
-    event.preventDefault();
-
-    const method = document.getElementById('betMethod').value;
-    const number = document.getElementById('betNumber').value;
-    const amount = parseInt(document.getElementById('betAmount').value);
-
-    // Validate number format
-    let isValid = false;
-    switch (method) {
-        case 'FIRST':
-            isValid = /^\d{6}$/.test(number);
-            break;
-        case 'LAST_THREE':
-            isValid = /^\d{3}$/.test(number);
-            break;
-        case 'LAST_TWO':
-            isValid = /^\d{2}$/.test(number);
-            break;
+// Update the potential win amount display
+function updatePotentialWin() {
+    const amount = document.getElementById('betAmount')?.value || 0;
+    const method = document.getElementById('betMethod')?.value || 'first2';
+    const winAmount = document.getElementById('winAmount');
+    
+    if (winAmount) {
+        const rate = PAYOUT_RATES[`THAI_${method.toUpperCase()}`] || PAYOUT_RATES['THAI_FIRST2'];
+        winAmount.textContent = formatMoney(amount * rate);
     }
+}
 
-    if (!isValid) {
-        showToast('ဂဏန်းပုံစံ မှားယွင်းနေပါသည်။', 'error');
-        return;
-    }
-
-    // Add to selected bets
-    const winAmount = calculateWinAmount('THAI', amount, method);
+// Add a bet to the selected bets list
+function addBet(number, amount, method) {
+    const rate = PAYOUT_RATES[`THAI_${method.toUpperCase()}`] || PAYOUT_RATES['THAI_FIRST2'];
     selectedBets.push({
-        type: 'THAI',
-        method,
         number,
-        amount,
-        win_amount: winAmount
+        amount: parseFloat(amount),
+        method,
+        type: 'THAI',
+        potentialWin: amount * rate
     });
-
-    // Update display
-    updateSelectedBets();
-    
-    // Reset form
-    event.target.reset();
-    updateWinAmount();
+    updateSelectedBetsDisplay();
 }
 
-// Update win amount display
-function updateWinAmount() {
-    const amount = parseInt(document.getElementById('betAmount').value) || 0;
-    const method = document.getElementById('betMethod').value;
-    const winAmount = calculateWinAmount('THAI', amount, method);
-    
-    document.getElementById('winAmount').textContent = formatCurrency(winAmount);
-}
+// Update the display of selected bets
+function updateSelectedBetsDisplay() {
+    const container = document.getElementById('selectedNumbers');
+    if (!container) return;
 
-// Update selected bets display
-function updateSelectedBets() {
-    const tbody = document.getElementById('selectedNumbers');
-    const submitBtn = document.getElementById('submitBets');
-    tbody.innerHTML = '';
-
-    let totalAmount = 0;
-    let totalWinAmount = 0;
-
-    selectedBets.forEach((bet, index) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+    container.innerHTML = selectedBets.map((bet, index) => `
+        <tr>
             <td>${bet.number}</td>
-            <td>${formatBetType(bet.method)}</td>
-            <td>${formatCurrency(bet.amount)}</td>
-            <td>${formatCurrency(bet.win_amount)}</td>
+            <td>${bet.method}</td>
+            <td>${formatMoney(bet.amount)}</td>
+            <td>${formatMoney(bet.potentialWin)}</td>
             <td>
                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeBet(${index})">
                     <i class="bi bi-x"></i>
                 </button>
             </td>
-        `;
-        tbody.appendChild(tr);
+        </tr>
+    `).join('');
 
-        totalAmount += bet.amount;
-        totalWinAmount += bet.win_amount;
-    });
-
-    document.getElementById('totalAmount').textContent = formatCurrency(totalAmount);
-    document.getElementById('totalWinAmount').textContent = formatCurrency(totalWinAmount);
-    submitBtn.disabled = selectedBets.length === 0;
+    // Update totals
+    const totalAmount = selectedBets.reduce((sum, bet) => sum + bet.amount, 0);
+    const totalWin = selectedBets.reduce((sum, bet) => sum + bet.potentialWin, 0);
+    
+    document.getElementById('totalAmount').textContent = formatMoney(totalAmount);
+    document.getElementById('totalWinAmount').textContent = formatMoney(totalWin);
 }
 
-// Remove a bet from the selected bets
-window.removeBet = function(index) {
+// Remove a bet from the selected bets list
+function removeBet(index) {
     selectedBets.splice(index, 1);
-    updateSelectedBets();
-};
+    updateSelectedBetsDisplay();
+}
 
-// Clear all selected bets
-window.clearAllBets = function() {
-    selectedBets = [];
-    updateSelectedBets();
-};
+// Handle adding a new bet
+async function handleAddBet(e) {
+    e.preventDefault();
+    
+    const number = document.getElementById('betNumber').value;
+    const amount = document.getElementById('betAmount').value;
+    const method = document.getElementById('betMethod').value;
 
-// Submit all selected bets
-async function submitAllBets() {
+    if (!number || !amount || !method) {
+        showToast('error', 'Please enter all required fields');
+        return;
+    }
+
+    const expectedLength = method.includes('3') ? 3 : 2;
+    if (number.length !== expectedLength) {
+        showToast('error', `Please enter a valid ${expectedLength}-digit number`);
+        return;
+    }
+
+    addBet(number, amount, method);
+    
+    // Reset form
+    e.target.reset();
+    document.getElementById('betMethod').value = method; // Keep the same method selected
+}
+
+// Handle submitting all selected bets
+async function handleSubmitAllBets() {
     if (selectedBets.length === 0) {
-        showToast('ထိုးမည့်ဂဏန်း ရွေးချယ်ပါ။', 'warning');
+        showToast('error', 'No bets selected');
         return;
     }
 
-    const totalAmount = selectedBets.reduce((sum, bet) => sum + bet.amount, 0);
-    if (totalAmount > userProfile.balance) {
-        showToast('လက်ကျန်ငွေ မလုံလောက်ပါ။', 'error');
-        return;
-    }
-
-    // Check if betting is allowed
-    const canBet = await isBettingAllowed('THAI');
-    if (!canBet) {
-        showToast('လောင်းကစားချိန် ကျော်လွန်သွားပါပြီ။', 'error');
-        return;
-    }
-
-    // Place all bets
     try {
         for (const bet of selectedBets) {
-            await placeBet('THAI', bet.number, bet.amount, bet.method);
+            await placeBet(DEFAULT_USER_ID, bet.number, bet.amount, bet.type, bet.method);
         }
 
-        showToast('ထိုးပြီးပါပြီ။', 'success');
+        showToast('success', 'Bets placed successfully');
         selectedBets = [];
-        updateSelectedBets();
-        loadBettingHistory();
+        updateSelectedBetsDisplay();
+        await updateBalanceDisplay();
+        await loadBettingHistory();
     } catch (error) {
-        showToast('ထိုး၍မရပါ။ နောက်မှ ထပ်ကြိုးစားပါ။', 'error');
+        console.error('Error placing bets:', error);
+        showToast('error', 'Error placing bets');
     }
 }
 
-// Update balance display
-function updateBalance(balance) {
-    document.getElementById('userBalance').textContent = formatCurrency(balance);
-}
+// Load user's betting history
+async function loadBettingHistory() {
+    try {
+        const bets = await getUserBets(DEFAULT_USER_ID, 'THAI');
+        const container = document.getElementById('bettingHistory');
+        if (!container) return;
 
-// Handle logout
-async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.href = 'index.html';
+        if (!bets || bets.length === 0) {
+            container.innerHTML = '<div class="text-center text-muted">No betting history</div>';
+            return;
+        }
+
+        container.innerHTML = bets.map(bet => `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${bet.number} (${bet.method || 'Thai'})</h6>
+                        <small class="text-muted">${formatDateTime(bet.created_at)}</small>
+                    </div>
+                    <div class="text-end">
+                        <div>${formatMoney(bet.amount)}</div>
+                        ${getStatusBadge(bet.status)}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading history:', error);
+        showToast('error', 'Error loading betting history');
+    }
 }
 
 // Initialize the page when DOM is loaded

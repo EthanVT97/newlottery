@@ -31,8 +31,11 @@
                         </a>
                     </li>
                 </ul>
-                <div class="d-flex align-items-center" id="authButtons">
-                    <!-- Auth buttons will be dynamically added here -->
+                <div class="d-flex align-items-center">
+                    <span class="text-light me-3">လက်ကျန်ငွေ: <span id="userBalance">0</span> MMK</span>
+                    <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#depositModal">
+                        <i class="bi bi-wallet me-1"></i>ငွေဖြည့်မည်
+                    </button>
                 </div>
             </div>
         </div>
@@ -48,8 +51,13 @@
                             <i class="bi bi-ticket-perforated-fill text-primary me-2"></i>မြန်မာ့ထီ
                         </h1>
                         <p class="lead mb-4">2D, 3D, Thai နှင့် Lao ထီများကို တစ်နေရာတည်းတွင် လွယ်ကူစွာ ထိုးနိုင်ပါပြီ</p>
-                        <div id="heroButtons" class="d-flex justify-content-center gap-3">
-                            <!-- Hero buttons will be dynamically added here -->
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="#games" class="btn btn-primary btn-lg">
+                                <i class="bi bi-play-circle me-1"></i>ထီထိုးမည်
+                            </a>
+                            <a href="#schedule" class="btn btn-outline-primary btn-lg">
+                                <i class="bi bi-calendar-event me-1"></i>အချိန်ဇယား
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -65,55 +73,63 @@
                 <div class="row g-4">
                     <!-- 2D Game Card -->
                     <div class="col-md-6 col-lg-3">
-                        <div class="card h-100 shadow-sm game-card" data-game="2d">
-                            <div class="card-body text-center">
-                                <i class="bi bi-2-circle display-4 text-primary mb-3"></i>
-                                <h3>2D</h3>
-                                <p class="text-muted">နေ့စဉ် 2 ကြိမ်ထွက်</p>
-                                <button class="btn btn-primary mt-2">
-                                    <i class="bi bi-play-circle me-1"></i>ကစားမည်
-                                </button>
+                        <a href="2d.html" class="text-decoration-none">
+                            <div class="card h-100 shadow-sm game-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-2-circle display-4 text-primary mb-3"></i>
+                                    <h3>2D</h3>
+                                    <p class="text-muted">နေ့စဉ် 2 ကြိမ်ထွက်</p>
+                                    <button class="btn btn-primary mt-2">
+                                        <i class="bi bi-play-circle me-1"></i>ကစားမည်
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                     <!-- 3D Game Card -->
                     <div class="col-md-6 col-lg-3">
-                        <div class="card h-100 shadow-sm game-card" data-game="3d">
-                            <div class="card-body text-center">
-                                <i class="bi bi-3-circle display-4 text-success mb-3"></i>
-                                <h3>3D</h3>
-                                <p class="text-muted">လစဉ် 2 ကြိမ်ထွက်</p>
-                                <button class="btn btn-success mt-2">
-                                    <i class="bi bi-play-circle me-1"></i>ကစားမည်
-                                </button>
+                        <a href="3d.html" class="text-decoration-none">
+                            <div class="card h-100 shadow-sm game-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-3-circle display-4 text-primary mb-3"></i>
+                                    <h3>3D</h3>
+                                    <p class="text-muted">လစဉ် 2 ကြိမ်ထွက်</p>
+                                    <button class="btn btn-primary mt-2">
+                                        <i class="bi bi-play-circle me-1"></i>ကစားမည်
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                     <!-- Thai Game Card -->
                     <div class="col-md-6 col-lg-3">
-                        <div class="card h-100 shadow-sm game-card" data-game="thai">
-                            <div class="card-body text-center">
-                                <i class="bi bi-flag-fill display-4 text-danger mb-3"></i>
-                                <h3>Thai Lottery</h3>
-                                <p class="text-muted">လစဉ် 2 ကြိမ်ထွက်</p>
-                                <button class="btn btn-danger mt-2">
-                                    <i class="bi bi-play-circle me-1"></i>ကစားမည်
-                                </button>
+                        <a href="thai.html" class="text-decoration-none">
+                            <div class="card h-100 shadow-sm game-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-flag-fill display-4 text-primary mb-3"></i>
+                                    <h3>Thai Lottery</h3>
+                                    <p class="text-muted">လစဉ် 2 ကြိမ်ထွက်</p>
+                                    <button class="btn btn-primary mt-2">
+                                        <i class="bi bi-play-circle me-1"></i>ကစားမည်
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                     <!-- Lao Game Card -->
                     <div class="col-md-6 col-lg-3">
-                        <div class="card h-100 shadow-sm game-card" data-game="lao">
-                            <div class="card-body text-center">
-                                <i class="bi bi-flag display-4 text-info mb-3"></i>
-                                <h3>Lao Lottery</h3>
-                                <p class="text-muted">လစဉ် 4 ကြိမ်ထွက်</p>
-                                <button class="btn btn-info mt-2">
-                                    <i class="bi bi-play-circle me-1"></i>ကစားမည်
-                                </button>
+                        <a href="lao.html" class="text-decoration-none">
+                            <div class="card h-100 shadow-sm game-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-flag display-4 text-primary mb-3"></i>
+                                    <h3>Lao Lottery</h3>
+                                    <p class="text-muted">လစဉ် 2 ကြိမ်ထွက်</p>
+                                    <button class="btn btn-primary mt-2">
+                                        <i class="bi bi-play-circle me-1"></i>ကစားမည်
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -127,46 +143,43 @@
                 </h2>
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <div class="row g-4">
-                            <!-- 2D Schedule -->
-                            <div class="col-md-6 col-lg-3">
-                                <h4 class="mb-3">2D ထွက်ချိန်</h4>
-                                <ul class="list-unstyled">
-                                    <li class="mb-2">
-                                        <i class="bi bi-clock me-2"></i>မနက်ပိုင်း - 12:01 PM
-                                    </li>
-                                    <li>
-                                        <i class="bi bi-clock me-2"></i>ညနေပိုင်း - 4:30 PM
-                                    </li>
-                                </ul>
-                            </div>
-                            <!-- 3D Schedule -->
-                            <div class="col-md-6 col-lg-3">
-                                <h4 class="mb-3">3D ထွက်ချိန်</h4>
-                                <ul class="list-unstyled">
-                                    <li>
-                                        <i class="bi bi-calendar me-2"></i>လစဉ် ၁ရက်နေ့ နှင့် ၁၆ရက်နေ့
-                                    </li>
-                                </ul>
-                            </div>
-                            <!-- Thai Schedule -->
-                            <div class="col-md-6 col-lg-3">
-                                <h4 class="mb-3">Thai Lottery</h4>
-                                <ul class="list-unstyled">
-                                    <li>
-                                        <i class="bi bi-calendar me-2"></i>လစဉ် ၁ရက်နေ့ နှင့် ၁၆ရက်နေ့
-                                    </li>
-                                </ul>
-                            </div>
-                            <!-- Lao Schedule -->
-                            <div class="col-md-6 col-lg-3">
-                                <h4 class="mb-3">Lao Lottery</h4>
-                                <ul class="list-unstyled">
-                                    <li>
-                                        <i class="bi bi-calendar me-2"></i>လစဉ် ၁၀ရက်၊ ၂၅ရက်နေ့
-                                    </li>
-                                </ul>
-                            </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ထီအမျိုးအစား</th>
+                                        <th>ထွက်ချိန်</th>
+                                        <th>ထိုးချိန်ပိတ်</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2D (မနက်ပိုင်း)</td>
+                                        <td>12:01 PM</td>
+                                        <td>11:30 AM</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2D (ညနေပိုင်း)</td>
+                                        <td>4:30 PM</td>
+                                        <td>4:00 PM</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3D</td>
+                                        <td>4:30 PM</td>
+                                        <td>4:00 PM</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Thai Lottery</td>
+                                        <td>4:30 PM</td>
+                                        <td>4:00 PM</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Lao Lottery</td>
+                                        <td>4:30 PM</td>
+                                        <td>4:00 PM</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -174,29 +187,67 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-light py-4 mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>MM Lottery</h5>
-                    <p class="mb-0"> 2024 All rights reserved.</p>
+    <!-- Deposit Modal -->
+    <div class="modal fade" id="depositModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-wallet me-1"></i>ငွေဖြည့်မည်
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <a href="#" class="text-light text-decoration-none me-3">Terms of Service</a>
-                    <a href="#" class="text-light text-decoration-none">Privacy Policy</a>
+                <div class="modal-body">
+                    <form id="depositForm">
+                        <div class="mb-3">
+                            <label class="form-label">ငွေပမာဏ</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="depositAmount" min="1000" step="1000" required>
+                                <span class="input-group-text">MMK</span>
+                            </div>
+                            <div class="form-text">အနည်းဆုံး 1,000 ကျပ်</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ငွေလွှဲမည့်နည်းလမ်း</label>
+                            <select class="form-select" id="paymentMethod" required>
+                                <option value="">ရွေးချယ်ပါ</option>
+                                <option value="kpay">KBZ Pay</option>
+                                <option value="wavepay">Wave Pay</option>
+                                <option value="cbpay">CB Pay</option>
+                                <option value="ayapay">AYA Pay</option>
+                            </select>
+                        </div>
+                        <div id="paymentDetails" class="d-none">
+                            <div class="alert alert-info mb-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>ငွေလွှဲရန် အကောင့်အချက်အလက်</strong>
+                                </div>
+                                <p class="mb-1" id="accountName"></p>
+                                <p class="mb-1" id="accountNumber"></p>
+                                <small>* ငွေလွှဲပြီးပါက Screenshot ရိုက်ထားပါ</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">ငွေလွှဲ Screenshot</label>
+                                <input type="file" class="form-control" id="paymentProof" accept="image/*" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">သင့်ဖုန်းနံပါတ်</label>
+                                <input type="tel" class="form-control" id="phoneNumber" required>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-wallet me-1"></i>ငွေဖြည့်မည်
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-    </footer>
+    </div>
 
-    <!-- Bootstrap JS -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- App Scripts -->
-    <script type="module" src="js/config.js"></script>
-    <script type="module" src="js/utils.js"></script>
-    <script type="module" src="js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/index.js"></script>
 </body>
 </html>

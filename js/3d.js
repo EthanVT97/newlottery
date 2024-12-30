@@ -1,390 +1,297 @@
 // 3d.js - 3D lottery game logic
 import { supabase } from './config.js';
-import { showToast, formatDateTime, formatCurrency } from './utils.js';
-import { placeBet, getBettingHistory, getLatestResults, isBettingAllowed, formatBetType, getStatusBadge, PAYOUT_RATES, calculateWinAmount } from './betting.js';
+import { showToast, formatDateTime, formatMoney } from './utils.js';
+import { 
+    placeBet,
+    getActiveSessions,
+    getUserBets,
+    formatBetType,
+    getStatusBadge,
+    PAYOUT_RATES 
+} from './database.js';
 
-let currentUser = null;
-let userProfile = null;
+const DEFAULT_USER_ID = 1; // Default user ID for the single user
 let selectedBets = [];
+let currentSession = null;
+let activeSessions = [];
 
 // Initialize the page
 async function initializePage() {
     try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        // Update balance display
+        await updateBalanceDisplay();
         
-        if (authError || !user) {
-            window.location.href = 'index.html';
-            return;
-        }
-
-        currentUser = user;
-        
-        // Get user profile
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-            
-        if (profileError) {
-            showToast('သင်၏ပရိုဖိုင်ကို ရယူ၍မရပါ။', 'error');
-            return;
-        }
-
-        userProfile = profile;
-        updateBalanceDisplay();
+        // Load active sessions
+        await loadActiveSessions();
         
         // Load betting history
         await loadBettingHistory();
         
-        // Load lottery results
-        await loadLotteryResults();
-        
         // Setup event listeners
         setupEventListeners();
         
-        // Start real-time subscription for balance updates
-        setupRealtimeSubscription();
-        
     } catch (error) {
-        console.error('Initialization error:', error);
-        showToast('စနစ်တွင် ပြဿနာရှိနေပါသည်။', 'error');
+        console.error('Error initializing page:', error);
+        showToast('error', 'Error loading page data');
     }
 }
 
+// Load active betting sessions
+async function loadActiveSessions() {
+    try {
+        activeSessions = await getActiveSessions();
+        if (activeSessions && activeSessions.length > 0) {
+            currentSession = activeSessions[0];
+            updateSessionDisplay();
+        }
+    } catch (error) {
+        console.error('Error loading sessions:', error);
+        showToast('error', 'Error loading betting sessions');
+    }
+}
+
+// Update the display of current session and results
+function updateSessionDisplay() {
+    const resultsContainer = document.getElementById('lotteryResults');
+    if (!resultsContainer) return;
+
+    resultsContainer.innerHTML = '';
+    
+    if (!activeSessions || activeSessions.length === 0) {
+        resultsContainer.innerHTML = '<div class="text-center text-muted">No active sessions</div>';
+        return;
+    }
+
+    activeSessions.forEach(session => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'list-group-item';
+        
+        const time = formatDateTime(session.created_at);
+        const result = session.result || '--';
+        const status = getStatusBadge(session.status);
+        
+        resultItem.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">${result}</h5>
+                    <small class="text-muted">${time}</small>
+                </div>
+                <div>
+                    ${status}
+                </div>
+            </div>
+        `;
+        
+        resultsContainer.appendChild(resultItem);
+    });
+}
+
+// Setup event listeners for the page
 function setupEventListeners() {
+    // Random number button
+    const randomBtn = document.getElementById('randomNumberBtn');
+    if (randomBtn) {
+        randomBtn.addEventListener('click', () => {
+            const betInput = document.getElementById('betNumber');
+            if (betInput) {
+                betInput.value = generateRandomNumber();
+            }
+        });
+    }
+
     // Quick amount buttons
-    document.querySelectorAll('[data-amount]').forEach(button => {
-        button.addEventListener('click', (e) => {
-            document.getElementById('betAmount').value = e.target.dataset.amount;
-            updateWinAmount();
+    const amountButtons = document.querySelectorAll('[data-amount]');
+    amountButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const amountInput = document.getElementById('betAmount');
+            if (amountInput) {
+                amountInput.value = button.dataset.amount;
+                updatePotentialWin();
+            }
         });
     });
 
-    // Add bet form handler
+    // Bet amount input
+    const betAmountInput = document.getElementById('betAmount');
+    if (betAmountInput) {
+        betAmountInput.addEventListener('input', updatePotentialWin);
+    }
+
+    // Bet form
     const betForm = document.getElementById('betForm');
     if (betForm) {
         betForm.addEventListener('submit', handleAddBet);
     }
 
-    // Random number button handler
-    const randomBtn = document.getElementById('randomNumberBtn');
-    if (randomBtn) {
-        randomBtn.addEventListener('click', generateRandomNumber);
+    // Submit all bets button
+    const submitBetsBtn = document.getElementById('submitBets');
+    if (submitBetsBtn) {
+        submitBetsBtn.addEventListener('click', handleSubmitAllBets);
     }
 
-    // Handle logout
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
-
-    // Submit all bets button handler
-    const submitBtn = document.getElementById('submitBets');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', handleSubmitAllBets);
-    }
-
-    // Amount input handler
-    const amountInput = document.getElementById('betAmount');
-    if (amountInput) {
-        amountInput.addEventListener('input', updateWinAmount);
+    // Clear all bets button
+    const clearAllBtn = document.getElementById('clearAllBets');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', () => {
+            selectedBets = [];
+            updateSelectedBetsDisplay();
+        });
     }
 }
 
-function setupRealtimeSubscription() {
-    // Subscribe to profile changes for real-time balance updates
-    const profileSubscription = supabase
-        .channel('profile_changes')
-        .on(
-            'postgres_changes',
-            {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'profiles',
-                filter: `id=eq.${currentUser.id}`
-            },
-            (payload) => {
-                userProfile = payload.new;
-                updateBalanceDisplay();
-            }
-        )
-        .subscribe();
+// Update user's balance display
+async function updateBalanceDisplay() {
+    try {
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('balance')
+            .eq('id', DEFAULT_USER_ID)
+            .single();
 
-    // Subscribe to bet status changes
-    const betSubscription = supabase
-        .channel('bet_changes')
-        .on(
-            'postgres_changes',
-            {
-                event: '*',
-                schema: 'public',
-                table: 'bets',
-                filter: `user_id=eq.${currentUser.id}`
-            },
-            () => {
-                loadBettingHistory();
-            }
-        )
-        .subscribe();
+        if (error) throw error;
 
-    // Subscribe to new results
-    const resultSubscription = supabase
-        .channel('result_changes')
-        .on(
-            'postgres_changes',
-            {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'results'
-            },
-            () => {
-                loadLotteryResults();
-            }
-        )
-        .subscribe();
-}
-
-function updateBalanceDisplay() {
-    const balanceEl = document.getElementById('userBalance');
-    if (balanceEl) {
-        balanceEl.textContent = formatCurrency(userProfile.balance);
+        const balanceDisplay = document.getElementById('userBalance');
+        if (balanceDisplay && user) {
+            balanceDisplay.textContent = formatMoney(user.balance);
+        }
+    } catch (error) {
+        console.error('Error updating balance:', error);
     }
 }
 
+// Generate a random 3-digit number
 function generateRandomNumber() {
-    const number = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    document.getElementById('betNumber').value = number;
-    updateWinAmount();
+    return String(Math.floor(Math.random() * 1000)).padStart(3, '0');
 }
 
-function updateWinAmount() {
-    const amount = parseInt(document.getElementById('betAmount').value) || 0;
-    const winAmount = calculateWinAmount('3D', amount);
-    
-    const winAmountEl = document.getElementById('winAmount');
-    if (winAmountEl) {
-        winAmountEl.textContent = formatCurrency(winAmount);
+// Update the potential win amount display
+function updatePotentialWin() {
+    const amount = document.getElementById('betAmount')?.value || 0;
+    const winAmount = document.getElementById('winAmount');
+    if (winAmount) {
+        winAmount.textContent = formatMoney(amount * PAYOUT_RATES['3D']);
     }
 }
 
+// Add a bet to the selected bets list
 function addBet(number, amount) {
-    // Validate number format
-    if (!/^\d{3}$/.test(number)) {
-        showToast('ဂဏန်းသုံးလုံး ထည့်သွင်းပါ။', 'error');
-        return;
-    }
-
-    // Calculate win amount
-    const winAmount = calculateWinAmount('3D', amount);
-
     selectedBets.push({
         number,
-        amount,
+        amount: parseFloat(amount),
         type: '3D',
-        win_amount: winAmount,
-        created_at: new Date().toISOString()
+        potentialWin: amount * PAYOUT_RATES['3D']
     });
+    updateSelectedBetsDisplay();
 }
 
+// Update the display of selected bets
 function updateSelectedBetsDisplay() {
     const container = document.getElementById('selectedNumbers');
     if (!container) return;
-    
-    container.innerHTML = '';
-    let totalAmount = 0;
-    let totalWinAmount = 0;
 
-    selectedBets.forEach((bet, index) => {
-        totalAmount += bet.amount;
-        totalWinAmount += bet.win_amount;
-        
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td><span class="badge bg-primary">${bet.number}</span></td>
-            <td>${formatCurrency(bet.amount)}</td>
-            <td>${formatCurrency(bet.win_amount)}</td>
+    container.innerHTML = selectedBets.map((bet, index) => `
+        <tr>
+            <td>${bet.number}</td>
+            <td>${bet.type}</td>
+            <td>${formatMoney(bet.amount)}</td>
+            <td>${formatMoney(bet.potentialWin)}</td>
             <td>
-                <button type="button" class="btn btn-sm btn-outline-danger remove-bet" data-index="${index}">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeBet(${index})">
                     <i class="bi bi-x"></i>
                 </button>
             </td>
-        `;
-        container.appendChild(row);
-
-        // Add click handler for remove button
-        const removeBtn = row.querySelector('.remove-bet');
-        if (removeBtn) {
-            removeBtn.addEventListener('click', () => {
-                selectedBets.splice(index, 1);
-                updateSelectedBetsDisplay();
-            });
-        }
-    });
+        </tr>
+    `).join('');
 
     // Update totals
-    const totalAmountEl = document.getElementById('totalAmount');
-    const totalWinAmountEl = document.getElementById('totalWinAmount');
+    const totalAmount = selectedBets.reduce((sum, bet) => sum + bet.amount, 0);
+    const totalWin = selectedBets.reduce((sum, bet) => sum + bet.potentialWin, 0);
     
-    if (totalAmountEl) {
-        totalAmountEl.textContent = formatCurrency(totalAmount);
-    }
-    
-    if (totalWinAmountEl) {
-        totalWinAmountEl.textContent = formatCurrency(totalWinAmount);
-    }
-
-    // Toggle submit button
-    const submitBtn = document.getElementById('submitBets');
-    if (submitBtn) {
-        submitBtn.disabled = selectedBets.length === 0;
-    }
+    document.getElementById('totalAmount').textContent = formatMoney(totalAmount);
+    document.getElementById('totalWinAmount').textContent = formatMoney(totalWin);
 }
 
+// Remove a bet from the selected bets list
+function removeBet(index) {
+    selectedBets.splice(index, 1);
+    updateSelectedBetsDisplay();
+}
+
+// Handle adding a new bet
 async function handleAddBet(e) {
     e.preventDefault();
     
     const number = document.getElementById('betNumber').value;
-    const amount = parseInt(document.getElementById('betAmount').value);
-    
+    const amount = document.getElementById('betAmount').value;
+
     if (!number || !amount) {
-        showToast('ကျေးဇူးပြု၍ လိုအပ်သောအချက်အလက်များကို ဖြည့်ပါ။', 'error');
+        showToast('error', 'Please enter both number and amount');
         return;
     }
 
-    // Validate number format
     if (!/^\d{3}$/.test(number)) {
-        showToast('ဂဏန်းသုံးလုံး ထည့်သွင်းပါ။', 'error');
+        showToast('error', 'Please enter a valid 3-digit number');
         return;
     }
 
-    // Check if betting is allowed
-    const allowed = await isBettingAllowed('3D');
-    if (!allowed) {
-        showToast('ယခုအချိန်တွင် လောင်းကစားခွင့် မရှိသေးပါ။', 'error');
-        return;
-    }
-
-    // Calculate total amount including new bet
-    const totalAmount = selectedBets.reduce((sum, bet) => sum + bet.amount, 0) + amount;
-    
-    if (totalAmount > userProfile.balance) {
-        showToast('သင့်လက်ကျန်ငွေ မလုံလောက်ပါ။', 'error');
-        return;
-    }
-    
-    // Add to selected bets
     addBet(number, amount);
-    
-    // Update display
-    updateSelectedBetsDisplay();
     
     // Reset form
     e.target.reset();
-    showToast('ထီဂဏန်းထည့်သွင်းပြီးပါပြီ။', 'success');
 }
 
+// Handle submitting all selected bets
 async function handleSubmitAllBets() {
     if (selectedBets.length === 0) {
-        showToast('ထိုးမည့်ဂဏန်းများ ရွေးချယ်ပါ။', 'error');
+        showToast('error', 'No bets selected');
         return;
     }
 
     try {
-        // Submit each bet
         for (const bet of selectedBets) {
-            await placeBet(bet.type, bet.number, bet.amount);
+            await placeBet(DEFAULT_USER_ID, bet.number, bet.amount, bet.type);
         }
-        
-        // Clear selected bets
+
+        showToast('success', 'Bets placed successfully');
         selectedBets = [];
         updateSelectedBetsDisplay();
-        
-        // Reload betting history
+        await updateBalanceDisplay();
         await loadBettingHistory();
-        
     } catch (error) {
-        console.error('Error submitting bets:', error);
-        showToast('လောင်းကစားမှု မအောင်မြင်ပါ။', 'error');
+        console.error('Error placing bets:', error);
+        showToast('error', 'Error placing bets');
     }
 }
 
+// Load user's betting history
 async function loadBettingHistory() {
     try {
-        const bets = await getBettingHistory('3D');
-        
+        const bets = await getUserBets(DEFAULT_USER_ID);
         const container = document.getElementById('bettingHistory');
         if (!container) return;
-        
-        container.innerHTML = '';
-        
-        if (bets.length === 0) {
-            container.innerHTML = `
-                <div class="list-group-item text-center text-muted">
-                    လောင်းကစားမှတ်တမ်း မရှိသေးပါ။
-                </div>
-            `;
+
+        if (!bets || bets.length === 0) {
+            container.innerHTML = '<div class="text-center text-muted">No betting history</div>';
             return;
         }
-        
-        bets.forEach(bet => {
-            const betElement = document.createElement('div');
-            betElement.className = 'list-group-item';
-            betElement.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="badge bg-primary">${bet.number}</span>
-                    ${getStatusBadge(bet.status)}
-                </div>
-                <div class="d-flex justify-content-between text-muted small">
-                    <span>${formatCurrency(bet.amount)}</span>
-                    <span>${bet.status === 'WIN' ? formatCurrency(bet.win_amount) + ' ရရှိ' : ''}</span>
-                </div>
-                <div class="d-flex justify-content-between text-muted small">
-                    <span>${formatDateTime(bet.created_at)}</span>
-                </div>
-            `;
-            container.appendChild(betElement);
-        });
-        
-    } catch (error) {
-        console.error('Error loading betting history:', error);
-    }
-}
 
-async function loadLotteryResults() {
-    try {
-        const results = await getLatestResults('3D');
-        
-        const container = document.getElementById('daily3D');
-        if (!container) return;
-        
-        if (results.length === 0) {
-            container.textContent = '---';
-            return;
-        }
-        
-        const latestResult = results[0];
-        container.textContent = latestResult.number;
-        
+        container.innerHTML = bets.map(bet => `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${bet.number} (${formatBetType(bet.type)})</h6>
+                        <small class="text-muted">${formatDateTime(bet.created_at)}</small>
+                    </div>
+                    <div class="text-end">
+                        <div>${formatMoney(bet.amount)}</div>
+                        ${getStatusBadge(bet.status)}
+                    </div>
+                </div>
+            </div>
+        `).join('');
     } catch (error) {
-        console.error('Error loading results:', error);
-    }
-}
-
-function clearAllBets() {
-    selectedBets = [];
-    updateSelectedBetsDisplay();
-}
-
-async function handleLogout() {
-    try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        
-        window.location.href = 'index.html';
-    } catch (error) {
-        console.error('Logout error:', error);
-        showToast('ထွက်ခွာ၍မရပါ။', 'error');
+        console.error('Error loading history:', error);
+        showToast('error', 'Error loading betting history');
     }
 }
 

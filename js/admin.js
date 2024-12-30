@@ -1,337 +1,438 @@
 // admin.js - Admin panel functionality
-import { showToast } from './utils.js';
 import { supabase } from './config.js';
-import { initializeRealtime } from './realtime.js';
+import { showToast, formatMoney, formatDateTime } from './utils.js';
 
-// Initialize Supabase client and realtime subscriptions
-initializeRealtime();
+// Load deposits based on status
+async function loadDeposits(status) {
+    try {
+        const { data: deposits, error } = await supabase
+            .from('deposits')
+            .select(`
+                *,
+                users (name)
+            `)
+            .eq('status', status)
+            .order('created_at', { ascending: false });
 
-// Router
-const routes = {
-    '/dashboard': async () => {
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-        document.getElementById('dashboard-view').classList.add('active');
-        await loadDashboardData();
-    },
-    '/2d': () => {
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-        document.getElementById('2d-view').classList.add('active');
-        initialize2DTable();
-    },
-    '/3d': () => {
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-        document.getElementById('3d-view').classList.add('active');
-        initialize3DTable();
-    },
-    '/members': () => {
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-        document.getElementById('members-view').classList.add('active');
-        initializeMembersTable();
-    }
-};
+        if (error) throw error;
 
-// Router function
-function router() {
-    const hash = window.location.hash || '#/dashboard';
-    const route = hash.slice(1);
-    
-    if (routes[route]) {
-        routes[route]();
-    } else {
-        window.location.hash = '/dashboard';
-    }
-}
+        const tableBody = document.getElementById('depositsTableBody');
+        tableBody.innerHTML = '';
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    // Check authentication
-    const user = supabase.auth.getUser();
-    if (!user) {
-        window.location.href = 'index.html';
-        return;
-    }
-
-    // Initialize router
-    router();
-    window.addEventListener('hashchange', router);
-
-    // Add event listeners
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await supabase.auth.signOut();
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error('Logout error:', error);
-                showToast('အကောင့်ထွက်ရာတွင် အမှားရှိနေပါသည်', 'error');
-            }
+        deposits.forEach(deposit => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${formatDateTime(deposit.created_at)}</td>
+                <td>${deposit.users.name}</td>
+                <td>${formatMoney(deposit.amount)}</td>
+                <td>${deposit.payment_method}</td>
+                <td>${deposit.phone_number}</td>
+                <td>
+                    <span class="badge bg-${getStatusBadgeClass(deposit.status)}">
+                        ${getStatusText(deposit.status)}
+                    </span>
+                </td>
+                <td>
+                    ${deposit.status === 'pending' ? `
+                        <button class="btn btn-sm btn-success me-1" onclick="approveDeposit(${deposit.id})">
+                            <i class="bi bi-check-circle"></i> အတည်ပြုမည်
+                        </button>
+                        <button class="btn btn-sm btn-danger me-1" onclick="rejectDeposit(${deposit.id})">
+                            <i class="bi bi-x-circle"></i> ငြင်းပယ်မည်
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-sm btn-primary" onclick="viewProof('${deposit.proof_image}')">
+                        <i class="bi bi-image"></i> ကြည့်မည်
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
         });
-    }
-
-    // Add refresh button handlers
-    const refreshButtons = {
-        'refresh2D': initialize2DTable,
-        'refresh3D': initialize3DTable,
-        'refreshMembers': initializeMembersTable
-    };
-
-    Object.entries(refreshButtons).forEach(([id, handler]) => {
-        const button = document.getElementById(id);
-        if (button) {
-            button.addEventListener('click', handler);
-        }
-    });
-});
-
-// Export functions for use in HTML
-window.edit2DResult = async (id) => {
-    // Implement edit 2D result logic
-};
-
-window.delete2DResult = async (id) => {
-    try {
-        const { error } = await supabase
-            .from('2d_results')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
-        showToast('2D ထီဂဏန်းကို ဖျက်ပြီးပါပြီ', 'success');
-        initialize2DTable();
     } catch (error) {
-        console.error('Delete 2D result error:', error);
-        showToast('2D ထီဂဏန်းဖျက်ရာတွင် အမှားရှိနေပါသည်', 'error');
-    }
-};
-
-window.edit3DResult = async (id) => {
-    // Implement edit 3D result logic
-};
-
-window.delete3DResult = async (id) => {
-    try {
-        const { error } = await supabase
-            .from('3d_results')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
-        showToast('3D ထီဂဏန်းကို ဖျက်ပြီးပါပြီ', 'success');
-        initialize3DTable();
-    } catch (error) {
-        console.error('Delete 3D result error:', error);
-        showToast('3D ထီဂဏန်းဖျက်ရာတွင် အမှားရှိနေပါသည်', 'error');
-    }
-};
-
-window.editMember = async (id) => {
-    // Implement edit member logic
-};
-
-window.deleteMember = async (id) => {
-    try {
-        const { error } = await supabase
-            .from('admin_members')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
-        showToast('အကောင့်ကို ဖျက်ပြီးပါပြီ', 'success');
-        initializeMembersTable();
-    } catch (error) {
-        console.error('Delete member error:', error);
-        showToast('အကောင့်ဖျက်ရာတွင် အမှားရှိနေပါသည်', 'error');
-    }
-};
-
-// Update dashboard statistics
-async function updateDashboardStats() {
-    try {
-        // Get 2D count
-        const { count: twodCount, error: twodError } = await supabase
-            .from('2d_results')
-            .select('*', { count: 'exact', head: true });
-
-        if (twodError) throw twodError;
-        document.getElementById('2d-count').textContent = twodCount || 0;
-
-        // Get 3D count
-        const { count: threedCount, error: threedError } = await supabase
-            .from('3d_results')
-            .select('*', { count: 'exact', head: true });
-
-        if (threedError) throw threedError;
-        document.getElementById('3d-count').textContent = threedCount || 0;
-
-        // Get today's results count
-        const today = new Date().toISOString().split('T')[0];
-        const { count: todayCount2D, error: todayError2D } = await supabase
-            .from('2d_results')
-            .select('*', { count: 'exact', head: true })
-            .eq('date', today);
-
-        const { count: todayCount3D, error: todayError3D } = await supabase
-            .from('3d_results')
-            .select('*', { count: 'exact', head: true })
-            .eq('date', today);
-
-        if (todayError2D) throw todayError2D;
-        if (todayError3D) throw todayError3D;
-
-        document.getElementById('today-count').textContent = (todayCount2D || 0) + (todayCount3D || 0);
-
-        // Get today's transactions
-        const todayDeposits = await supabase
-            .from('transactions')
-            .select('amount')
-            .eq('date', today)
-            .eq('type', 'deposit');
-
-        const todayWithdrawals = await supabase
-            .from('transactions')
-            .select('amount')
-            .eq('date', today)
-            .eq('type', 'withdraw');
-
-        const depositSum = todayDeposits.data?.reduce((sum, t) => sum + t.amount, 0) || 0;
-        const withdrawalSum = todayWithdrawals.data?.reduce((sum, t) => sum + t.amount, 0) || 0;
-
-        // Add transaction stats to dashboard
-        document.getElementById('today-deposits').textContent = new Intl.NumberFormat('my-MM').format(depositSum);
-        document.getElementById('today-withdrawals').textContent = new Intl.NumberFormat('my-MM').format(withdrawalSum);
-    } catch (error) {
-        console.error('Error updating dashboard stats:', error);
-        showToast('ဒ့တ္တာ့စ် အချက်အလက်များ ဖတ်ရာတွင် အမှားရှိနေပါသည်', 'danger');
+        console.error('Error loading deposits:', error);
+        showToast('error', 'ငွေသွင်းမှတ်တမ်းများ ရယူရာတွင် အမှားရှိနေပါသည်');
     }
 }
 
-// Load dashboard data
-async function loadDashboardData() {
+// Load results
+async function loadResults() {
     try {
-        // Load member stats first (this should work)
-        const { data: members, error: memberError } = await supabase
-            .from('admin_members')
-            .select('id')
-            .eq('status', true);
+        // Load 2D results
+        const { data: results2d, error: error2d } = await supabase
+            .from('results_2d')
+            .select('*')
+            .order('date', { ascending: false })
+            .order('time', { ascending: false })
+            .limit(10);
 
-        if (!memberError) {
-            document.getElementById('totalMembers').textContent = `${members.length} ဦး`;
+        if (error2d) throw error2d;
+
+        // Load 3D results
+        const { data: results3d, error: error3d } = await supabase
+            .from('results_3d')
+            .select('*')
+            .order('date', { ascending: false })
+            .limit(10);
+
+        if (error3d) throw error3d;
+
+        const tableBody = document.getElementById('resultsTableBody');
+        tableBody.innerHTML = '';
+
+        // Combine and sort results
+        const allResults = [
+            ...results2d.map(r => ({ ...r, type: '2D' })),
+            ...results3d.map(r => ({ ...r, type: '3D' }))
+        ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        allResults.forEach(result => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${formatDateTime(result.date).split(' ')[0]}</td>
+                <td>${result.time ? (result.time === '12:01:00' ? 'မနက်ပိုင်း' : 'ညနေပိုင်း') : '-'}</td>
+                <td>${result.type}</td>
+                <td>${result.number}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="editResult('${result.type}', ${result.id})">
+                        <i class="bi bi-pencil"></i> ပြင်မည်
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error loading results:', error);
+        showToast('error', 'ထွက်ဂဏန်းများ ရယူရာတွင် အမှားရှိနေပါသည်');
+    }
+}
+
+// Load bets based on status
+async function loadBets(status) {
+    try {
+        const { data: bets, error } = await supabase
+            .from('bets')
+            .select(`
+                *,
+                users (name)
+            `)
+            .eq('status', status)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const tableBody = document.getElementById('betsTableBody');
+        tableBody.innerHTML = '';
+
+        bets.forEach(bet => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${formatDateTime(bet.created_at)}</td>
+                <td>${bet.users.name}</td>
+                <td>${bet.type}</td>
+                <td>${bet.number}</td>
+                <td>${formatMoney(bet.amount)}</td>
+                <td>${getBetMethodText(bet.bet_method)}</td>
+                <td>
+                    <span class="badge bg-${getStatusBadgeClass(bet.status)}">
+                        ${getStatusText(bet.status)}
+                    </span>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error loading bets:', error);
+        showToast('error', 'လောင်းကစားမှတ်တမ်းများ ရယူရာတွင် အမှားရှိနေပါသည်');
+    }
+}
+
+// Add result
+async function addResult() {
+    const type = document.getElementById('resultType').value;
+    const date = document.getElementById('resultDate').value;
+    const time = document.getElementById('resultTime').value;
+    const number = document.getElementById('resultNumber').value;
+
+    try {
+        let error;
+        if (type === '2D') {
+            const { error: err2d } = await supabase
+                .from('results_2d')
+                .insert([{ 
+                    number,
+                    date,
+                    time: time === 'morning' ? '12:01:00' : '16:30:00'
+                }]);
+            error = err2d;
+        } else if (type === '3D') {
+            const { error: err3d } = await supabase
+                .from('results_3d')
+                .insert([{ 
+                    number,
+                    date
+                }]);
+            error = err3d;
         }
 
-        // Set default values for sales
-        document.getElementById('total2DSales').textContent = `0 ကျပ်`;
-        document.getElementById('total3DSales').textContent = `0 ကျပ်`;
+        if (error) throw error;
 
-        // Add placeholder text for recent activity
-        document.getElementById('recentSales').innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center">မှတ်တမ်းများ မရှိသေးပါ</td>
-            </tr>
-        `;
+        showToast('success', 'ထွက်ဂဏန်း ထည့်သွင်းပြီးပါပြီ');
+        bootstrap.Modal.getInstance(document.getElementById('addResultModal')).hide();
+        loadResults();
         
-        document.getElementById('recentActivity').innerHTML = `
-            <div class="text-center text-muted">
-                <i class="bi bi-info-circle"></i>
-                <p>လုပ်ဆောင်ချက် မှတ်တမ်းများ မရှိသေးပါ</p>
-            </div>
-        `;
-
-        // Add some sample activity for testing
-        const sampleActivity = [
-            {
-                type: 'login',
-                description: 'Admin အကောင့်ဝင်ရောက်မှု',
-                created_at: new Date().toISOString()
-            },
-            {
-                type: 'member',
-                description: 'အကောင့်အသစ် ထည့်သွင်းခြင်း',
-                created_at: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
-            }
-        ];
-
-        const activityHtml = sampleActivity.map(item => `
-            <div class="d-flex align-items-center mb-3">
-                <div class="activity-icon ${item.type === 'login' ? 'bg-primary' : 'bg-success'} text-white rounded-circle p-2 me-3">
-                    <i class="bi ${item.type === 'login' ? 'bi-person' : 'bi-people'}"></i>
-                </div>
-                <div>
-                    <p class="mb-0">${item.description}</p>
-                    <small class="text-muted">${new Date(item.created_at).toLocaleString()}</small>
-                </div>
-            </div>
-        `).join('');
-        document.getElementById('recentActivity').innerHTML = activityHtml;
+        // Process winning bets
+        await processWinningBets(type, number, date, time);
 
     } catch (error) {
-        console.error('Dashboard Error:', error);
-        showToast('ပင်မစာမျက်နှာ အချက်အလက်များ ရယူရာတွင် အမှားရှိနေပါသည်', 'danger');
+        console.error('Error adding result:', error);
+        showToast('error', 'ထွက်ဂဏန်း ထည့်သွင်းရာတွင် အမှားရှိနေပါသည်');
     }
 }
 
-// Initialize 2D table
-function initialize2DTable() {
-    const columns = {
-        date: { title: 'Date' },
-        time: { title: 'Time' },
-        number: { title: 'Number' },
-        set: { title: 'Set' },
-        value: { title: 'Value' }
-    };
+// Process winning bets
+async function processWinningBets(type, winningNumber, date, time) {
+    try {
+        // Get pending bets for this type and date
+        const { data: bets, error } = await supabase
+            .from('bets')
+            .select('*')
+            .eq('type', type)
+            .eq('date', date)
+            .eq('status', 'pending');
 
-    const actionRenderer = (data, type, row) => {
-        return `<button class="btn btn-sm btn-primary" onclick="edit2DResult(${row.id})">ပြင်ဆင်</button>
-                <button class="btn btn-sm btn-danger" onclick="delete2DResult(${row.id})">ဖျက်ရန်</button>`;
-    };
+        if (error) throw error;
 
-    return initializeTable('2dResultsTable', 
-        addActionColumn(columns, actionRenderer),
-        { order: [[0, 'desc'], [1, 'desc']] }
-    );
-}
+        for (const bet of bets) {
+            // For 2D, also check the time
+            if (type === '2D' && bet.time !== time) continue;
 
-// Initialize 3D table
-function initialize3DTable() {
-    const columns = {
-        date: { title: 'Date' },
-        number: { title: 'Number' },
-        set: { title: 'Set' },
-        value: { title: 'Value' }
-    };
+            const isWinner = checkWinningBet(bet.number, winningNumber, type, bet.bet_method);
+            const status = isWinner ? 'won' : 'lost';
+            
+            // Update bet status
+            const { error: updateError } = await supabase
+                .from('bets')
+                .update({ status })
+                .eq('id', bet.id);
 
-    const actionRenderer = (data, type, row) => {
-        return `<button class="btn btn-sm btn-primary" onclick="edit3DResult(${row.id})">ပြင်ဆင်</button>
-                <button class="btn btn-sm btn-danger" onclick="delete3DResult(${row.id})">ဖျက်ရန်</button>`;
-    };
+            if (updateError) throw updateError;
 
-    return initializeTable('3dResultsTable', 
-        addActionColumn(columns, actionRenderer),
-        { order: [[0, 'desc']] }
-    );
-}
+            // If won, update user balance and create transaction
+            if (isWinner) {
+                const winAmount = calculateWinAmount(bet.amount, type, bet.bet_method);
+                
+                // Update user balance
+                const { error: balanceError } = await supabase
+                    .from('users')
+                    .update({
+                        balance: supabase.raw(`balance + ${winAmount}`)
+                    })
+                    .eq('id', bet.user_id);
 
-// Initialize members table
-function initializeMembersTable() {
-    const columns = {
-        name: { title: 'Name' },
-        email: { title: 'Email' },
-        balance: { 
-            title: 'Balance',
-            render: (data) => data.toLocaleString('my-MM')
-        },
-        status: { 
-            title: 'Status',
-            render: (data) => `<span class="badge bg-${data === 'active' ? 'success' : 'danger'}">${data}</span>`
+                if (balanceError) throw balanceError;
+
+                // Create win transaction
+                const { error: transactionError } = await supabase
+                    .from('transactions')
+                    .insert({
+                        user_id: bet.user_id,
+                        type: 'win',
+                        amount: winAmount,
+                        reference_id: `WIN_${bet.id}`,
+                        status: 'completed'
+                    });
+
+                if (transactionError) throw transactionError;
+            }
         }
-    };
 
-    const actionRenderer = (data, type, row) => {
-        return `<button class="btn btn-sm btn-primary" onclick="editMember(${row.id})">ပြင်ဆင်</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteMember(${row.id})">ဖျက်ရန်</button>`;
-    };
+        showToast('success', 'အနိုင်/အရှုံး တွက်ချက်ပြီးပါပြီ');
 
-    return initializeTable('membersTable', 
-        addActionColumn(columns, actionRenderer)
-    );
+    } catch (error) {
+        console.error('Error processing winning bets:', error);
+        showToast('error', 'အနိုင်/အရှုံး တွက်ချက်ရာတွင် အမှားရှိနေပါသည်');
+    }
 }
+
+// Approve deposit
+async function approveDeposit(id) {
+    try {
+        const { data: deposit, error: fetchError } = await supabase
+            .from('deposits')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        // Update deposit status
+        const { error: updateError } = await supabase
+            .from('deposits')
+            .update({ status: 'approved' })
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        // Update user balance
+        const { error: balanceError } = await supabase
+            .from('users')
+            .update({
+                balance: supabase.raw(`balance + ${deposit.amount}`)
+            })
+            .eq('id', deposit.user_id);
+
+        if (balanceError) throw balanceError;
+
+        // Create transaction record
+        const { error: transactionError } = await supabase
+            .from('transactions')
+            .insert({
+                user_id: deposit.user_id,
+                type: 'deposit',
+                amount: deposit.amount,
+                reference_id: `DEP_${id}`,
+                status: 'completed'
+            });
+
+        if (transactionError) throw transactionError;
+
+        showToast('success', 'ငွေသွင်းမှု အတည်ပြုပြီးပါပြီ');
+        loadDeposits('pending');
+
+    } catch (error) {
+        console.error('Error approving deposit:', error);
+        showToast('error', 'ငွေသွင်းမှု အတည်ပြုရာတွင် အမှားရှိနေပါသည်');
+    }
+}
+
+// Reject deposit
+async function rejectDeposit(id) {
+    try {
+        const { error: updateError } = await supabase
+            .from('deposits')
+            .update({ status: 'rejected' })
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        // Create failed transaction record
+        const { error: transactionError } = await supabase
+            .from('transactions')
+            .insert({
+                user_id: deposit.user_id,
+                type: 'deposit',
+                amount: deposit.amount,
+                reference_id: `DEP_${id}`,
+                status: 'failed'
+            });
+
+        if (transactionError) throw transactionError;
+
+        showToast('success', 'ငွေသွင်းမှု ငြင်းပယ်ပြီးပါပြီ');
+        loadDeposits('pending');
+
+    } catch (error) {
+        console.error('Error rejecting deposit:', error);
+        showToast('error', 'ငွေသွင်းမှု ငြင်းပယ်ရာတွင် အမှားရှိနေပါသည်');
+    }
+}
+
+// View payment proof
+function viewProof(imageUrl) {
+    document.getElementById('proofImage').src = `${supabase.storageUrl}/object/public/uploads/${imageUrl}`;
+    new bootstrap.Modal(document.getElementById('viewProofModal')).show();
+}
+
+// Helper functions
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'pending': return 'warning';
+        case 'approved':
+        case 'won': return 'success';
+        case 'rejected':
+        case 'lost': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function getStatusText(status) {
+    switch (status) {
+        case 'pending': return 'စောင့်ဆိုင်းဆဲ';
+        case 'approved': return 'အတည်ပြုပြီး';
+        case 'rejected': return 'ငြင်းပယ်ထား';
+        case 'won': return 'အနိုင်ရ';
+        case 'lost': return 'အရှုံး';
+        default: return status;
+    }
+}
+
+function getBetMethodText(method) {
+    switch (method) {
+        case 'R': return 'ရိုးရိုး';
+        case 'P': return 'ပါဝါ';
+        case 'B': return 'ဘရိတ်';
+        case 'first2': return 'ရှေ့ ၂ လုံး';
+        case 'last2': return 'နောက် ၂ လုံး';
+        case 'first3': return 'ရှေ့ ၃ လုံး';
+        case 'last3': return 'နောက် ၃ လုံး';
+        default: return method;
+    }
+}
+
+function checkWinningBet(betNumber, winningNumber, type, betMethod) {
+    switch (type) {
+        case '2D':
+            return betNumber === winningNumber.slice(-2);
+        case '3D':
+            if (betMethod === 'first3') return betNumber === winningNumber.slice(0, 3);
+            if (betMethod === 'last3') return betNumber === winningNumber.slice(-3);
+            return betNumber === winningNumber;
+        default:
+            return betNumber === winningNumber;
+    }
+}
+
+function calculateWinAmount(betAmount, type, betMethod) {
+    const multipliers = {
+        '2D': {
+            'R': 85,
+            'P': 425,
+            'B': 8500
+        },
+        '3D': {
+            'R': 500,
+            'first3': 500,
+            'last3': 500
+        },
+        'THAI': 100000,
+        'LAO': 100000
+    };
+
+    if (type === '2D' || type === '3D') {
+        return betAmount * multipliers[type][betMethod];
+    }
+    return betAmount * multipliers[type];
+}
+
+// Show add result modal
+function showAddResultModal() {
+    document.getElementById('resultDate').valueAsDate = new Date();
+    new bootstrap.Modal(document.getElementById('addResultModal')).show();
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Load initial data
+    loadDeposits('pending');
+    loadResults();
+    loadBets('pending');
+
+    // Make functions available globally
+    window.loadDeposits = loadDeposits;
+    window.loadBets = loadBets;
+    window.approveDeposit = approveDeposit;
+    window.rejectDeposit = rejectDeposit;
+    window.viewProof = viewProof;
+    window.showAddResultModal = showAddResultModal;
+    window.addResult = addResult;
+});

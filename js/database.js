@@ -1,167 +1,382 @@
-// database.js - Database operations module
+// database.js - Database operations
+import { supabase } from './config.js';
+import { APP_CONFIG, GAME_CONFIG } from './config.js';
 
 /**
  * Database configuration
  */
 export const DB_CONFIG = {
-    name: '2d3d_db',
-    version: 2, // Incrementing version to force index creation
     tables: {
         users: 'users',
         results2D: 'results_2d',
         results3D: 'results_3d',
         bets: 'bets',
-        transactions: 'transactions'
+        transactions: 'transactions',
+        sessions: 'sessions'
     }
 };
 
+// Payout rates for different bet types
+export const PAYOUT_RATES = {
+    '2D_R': 85,
+    '2D_P': 80,
+    '2D_B': 75,
+    '3D_R': 500,
+    '3D_P': 450,
+    '3D_B': 400,
+    'THAI_first2': 85,
+    'THAI_last2': 85,
+    'THAI_first3': 500,
+    'THAI_last3': 500,
+    'LAO_first2': 85,
+    'LAO_last2': 85,
+    'LAO_first3': 500,
+    'LAO_last3': 500
+};
+
 /**
- * Initialize database connection
- * @returns {Promise<IDBDatabase>}
+ * Initialize database and create default users
  */
-export function initDatabase() {
-    return new Promise((resolve, reject) => {
+export async function initDatabase() {
+    try {
         console.log('Initializing database...');
-        const request = indexedDB.open(DB_CONFIG.name, DB_CONFIG.version);
+        
+        // Create default admin user
+        const { data: adminData, error: adminError } = await supabase.auth.signUp({
+            email: 'admin@gmail.com',
+            password: '123456',
+            options: {
+                data: {
+                    role: 'admin',
+                    name: 'Admin User',
+                }
+            }
+        });
 
-        request.onerror = () => {
-            console.error('Database error:', request.error);
-            reject(request.error);
-        };
+        if (adminError) throw adminError;
 
-        request.onsuccess = () => {
-            console.log('Database opened successfully');
-            resolve(request.result);
-        };
+        // Create default regular user
+        const { data: userData, error: userError } = await supabase.auth.signUp({
+            email: 'user@gmail.com',
+            password: '123456',
+            options: {
+                data: {
+                    role: 'user',
+                    name: 'Regular User',
+                }
+            }
+        });
 
-        request.onupgradeneeded = (event) => {
-            console.log('Database upgrade needed');
-            const db = event.target.result;
-            createTables(db);
-        };
-    });
-}
+        if (userError) throw userError;
 
-/**
- * Create database tables
- * @param {IDBDatabase} db
- */
-function createTables(db) {
-    console.log('Creating/updating tables...');
-    
-    // Users table
-    if (!db.objectStoreNames.contains(DB_CONFIG.tables.users)) {
-        console.log('Creating users table...');
-        const userStore = db.createObjectStore(DB_CONFIG.tables.users, { keyPath: 'id', autoIncrement: true });
-        userStore.createIndex('email', 'email', { unique: true });
-        userStore.createIndex('role', 'role', { unique: false });
-        console.log('Users table created with indexes');
-    } else {
-        console.log('Users table already exists');
+        console.log('Database initialized successfully');
+        return true;
+    } catch (error) {
+        console.error('Database initialization error:', error);
+        return false;
     }
-
-    // 2D Results table
-    if (!db.objectStoreNames.contains(DB_CONFIG.tables.results2D)) {
-        console.log('Creating 2D results table...');
-        const results2DStore = db.createObjectStore(DB_CONFIG.tables.results2D, { keyPath: 'id', autoIncrement: true });
-        results2DStore.createIndex('date', 'date');
-        results2DStore.createIndex('time', 'time');
-    }
-
-    // 3D Results table
-    if (!db.objectStoreNames.contains(DB_CONFIG.tables.results3D)) {
-        console.log('Creating 3D results table...');
-        const results3DStore = db.createObjectStore(DB_CONFIG.tables.results3D, { keyPath: 'id', autoIncrement: true });
-        results3DStore.createIndex('date', 'date');
-    }
-
-    // Bets table
-    if (!db.objectStoreNames.contains(DB_CONFIG.tables.bets)) {
-        console.log('Creating bets table...');
-        const betsStore = db.createObjectStore(DB_CONFIG.tables.bets, { keyPath: 'id', autoIncrement: true });
-        betsStore.createIndex('userId', 'userId');
-        betsStore.createIndex('date', 'date');
-        betsStore.createIndex('type', 'type');
-    }
-
-    // Transactions table
-    if (!db.objectStoreNames.contains(DB_CONFIG.tables.transactions)) {
-        console.log('Creating transactions table...');
-        const transactionsStore = db.createObjectStore(DB_CONFIG.tables.transactions, { keyPath: 'id', autoIncrement: true });
-        transactionsStore.createIndex('userId', 'userId');
-        transactionsStore.createIndex('date', 'date');
-        transactionsStore.createIndex('type', 'type');
-    }
-}
-
-/**
- * Generic database operation
- * @param {string} storeName - Name of the store
- * @param {string} mode - Transaction mode ('readonly' or 'readwrite')
- * @param {Function} operation - Operation to perform
- * @returns {Promise<any>}
- */
-async function dbOperation(storeName, mode, operation) {
-    const db = await initDatabase();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(storeName, mode);
-        const store = transaction.objectStore(storeName);
-
-        try {
-            const request = operation(store);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        } catch (error) {
-            reject(error);
-        }
-    });
 }
 
 /**
  * Add item to store
- * @param {string} storeName - Store name
+ * @param {string} table - Table name
  * @param {Object} data - Data to add
- * @returns {Promise<number>} - Returns the ID of the added item
+ * @returns {Promise<Object>}
  */
-export function addItem(storeName, data) {
-    return dbOperation(storeName, 'readwrite', (store) => store.add(data));
+export async function addItem(table, data) {
+    const { data: result, error } = await supabase
+        .from(table)
+        .insert(data)
+        .select()
+        .single();
+    
+    if (error) throw error;
+    return result;
 }
 
 /**
  * Get item by ID
- * @param {string} storeName - Store name
+ * @param {string} table - Table name
  * @param {number} id - Item ID
  * @returns {Promise<Object>}
  */
-export function getItem(storeName, id) {
-    return dbOperation(storeName, 'readonly', (store) => store.get(id));
+export async function getItem(table, id) {
+    const { data, error } = await supabase
+        .from(table)
+        .select()
+        .eq('id', id)
+        .single();
+    
+    if (error) throw error;
+    return data;
 }
 
 /**
  * Update item
- * @param {string} storeName - Store name
+ * @param {string} table - Table name
+ * @param {number} id - Item ID
  * @param {Object} data - Updated data
  * @returns {Promise<Object>}
  */
-export function updateItem(storeName, data) {
-    return dbOperation(storeName, 'readwrite', (store) => store.put(data));
+export async function updateItem(table, id, data) {
+    const { data: result, error } = await supabase
+        .from(table)
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+    
+    if (error) throw error;
+    return result;
 }
 
 /**
  * Delete item
- * @param {string} storeName - Store name
+ * @param {string} table - Table name
  * @param {number} id - Item ID
- * @returns {Promise<undefined>}
+ * @returns {Promise<void>}
  */
-export function deleteItem(storeName, id) {
-    return dbOperation(storeName, 'readwrite', (store) => store.delete(id));
+export async function deleteItem(table, id) {
+    const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('id', id);
+    
+    if (error) throw error;
 }
 
 /**
- * Get all items from store
- * @param {string} storeName - Store name
+ * Get all items from table
+ * @param {string} table - Table name
  * @returns {Promise<Array>}
  */
-export function getAllItems(storeName) {
-    return dbOperation(storeName, 'readonly', (store) => store.getAll());
+export async function getAllItems(table) {
+    const { data, error } = await supabase
+        .from(table)
+        .select();
+    
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Get items with filter
+ * @param {string} table - Table name
+ * @param {Object} filter - Filter conditions
+ * @returns {Promise<Array>}
+ */
+export async function getFilteredItems(table, filter) {
+    let query = supabase.from(table).select();
+    
+    // Apply filters
+    Object.entries(filter).forEach(([key, value]) => {
+        query = query.eq(key, value);
+    });
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Get active betting sessions
+ */
+export async function getActiveSessions() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('date', today)
+        .order('created_at', { ascending: false });
+        
+    if (error) {
+        console.error('Error getting sessions:', error);
+        return [];
+    }
+    
+    return data || [];
+}
+
+/**
+ * Get user balance
+ */
+export async function getUserBalance() {
+    const { data, error } = await supabase
+        .from('users')
+        .select('balance')
+        .eq('id', APP_CONFIG.defaultUserId)
+        .single();
+
+    if (error) {
+        console.error('Error getting balance:', error);
+        return 0;
+    }
+
+    return data.balance;
+}
+
+/**
+ * Update user balance
+ */
+export async function updateUserBalance(amount) {
+    const { data, error } = await supabase
+        .from('users')
+        .update({ balance: amount })
+        .eq('id', APP_CONFIG.defaultUserId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating balance:', error);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Place a bet
+ */
+export async function placeBet(userId, number, amount, type, method) {
+    const today = new Date().toISOString().split('T')[0];
+    const currentTime = new Date().toTimeString().split(' ')[0];
+    
+    // Get current balance
+    const currentBalance = await getUserBalance();
+    if (currentBalance < amount) {
+        throw new Error('Insufficient balance');
+    }
+    
+    // Start transaction
+    const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+            user_id: userId,
+            type: 'bet',
+            amount: -amount,
+            status: 'completed'
+        });
+    
+    if (transactionError) throw transactionError;
+    
+    // Update balance
+    const newBalance = currentBalance - amount;
+    const balanceUpdated = await updateUserBalance(newBalance);
+    if (!balanceUpdated) throw new Error('Failed to update balance');
+    
+    // Place bet
+    const { data: bet, error: betError } = await supabase
+        .from('bets')
+        .insert({
+            user_id: userId,
+            type: type,
+            number: number,
+            amount: amount,
+            bet_method: method,
+            date: today,
+            time: currentTime,
+            status: 'pending'
+        })
+        .select()
+        .single();
+    
+    if (betError) throw betError;
+    
+    return bet;
+}
+
+/**
+ * Get user bets
+ */
+export async function getUserBets(userId, type = null) {
+    let query = supabase
+        .from('bets')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+    
+    if (type) {
+        query = query.eq('type', type);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+        console.error('Error getting bets:', error);
+        return [];
+    }
+    
+    return data;
+}
+
+/**
+ * Format bet type for display
+ */
+export function formatBetType(method) {
+    const methodMap = {
+        'R': 'Regular',
+        'P': 'Power',
+        'B': 'Break',
+        'first2': 'First 2',
+        'last2': 'Last 2',
+        'first3': 'First 3',
+        'last3': 'Last 3'
+    };
+    
+    return methodMap[method] || method;
+}
+
+/**
+ * Get status badge class
+ */
+export function getStatusBadge(status) {
+    const badges = {
+        'pending': 'badge bg-warning',
+        'won': 'badge bg-success',
+        'lost': 'badge bg-danger',
+        'completed': 'badge bg-success',
+        'failed': 'badge bg-danger'
+    };
+    
+    const badgeClass = badges[status] || 'badge bg-secondary';
+    return `<span class="${badgeClass}">${status}</span>`;
+}
+
+/**
+ * Get latest results
+ */
+export async function getLatestResults(type) {
+    const table = type === '2D' ? 'results_2d' : 'results_3d';
+    const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+    if (error) {
+        console.error('Error getting results:', error);
+        return [];
+    }
+
+    return data;
+}
+
+/**
+ * Get user transactions
+ */
+export async function getUserTransactions() {
+    const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', APP_CONFIG.defaultUserId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error getting transactions:', error);
+        return [];
+    }
+
+    return data;
 }

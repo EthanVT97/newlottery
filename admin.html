@@ -3,441 +3,470 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            padding: 3px 6px;
+            border-radius: 50%;
+            background: red;
+            color: white;
+        }
+        #notificationSound {
+            display: none;
+        }
+        .deposit-new {
+            animation: highlight 2s;
+        }
+        @keyframes highlight {
+            0% { background-color: #ffeeba; }
+            100% { background-color: transparent; }
+        }
+    </style>
 </head>
 <body>
-    <!-- Admin Content -->
-    <div id="adminContent" style="display: none;">
-        <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="#/dashboard">Admin Panel</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Admin Dashboard</h2>
+            <div class="position-relative">
+                <button class="btn btn-primary" id="notificationBtn">
+                    <i class="bi bi-bell"></i>
+                    <span class="notification-badge d-none" id="notificationBadge">0</span>
                 </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="#/dashboard">ပင်မစာမျက်နှာ</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#/2d">2D</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#/3d">3D</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#/members">အကောင့်များ</a>
-                        </li>
-                    </ul>
-                    <div class="d-flex">
-                        <span class="navbar-text me-3" id="userInfo"></span>
-                        <button class="btn btn-outline-light" onclick="logout()">ထွက်မည်</button>
-                    </div>
+            </div>
+        </div>
+        
+        <!-- Deposits Section -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>ငွေသွင်းမှတ်တမ်းများ</h5>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary active" onclick="loadDeposits('pending')">စောင့်ဆိုင်းဆဲ</button>
+                    <button class="btn btn-outline-success" onclick="loadDeposits('approved')">အတည်ပြုပြီး</button>
+                    <button class="btn btn-outline-danger" onclick="loadDeposits('rejected')">ငြင်းပယ်ထား</button>
                 </div>
             </div>
-        </nav>
-
-        <!-- Dashboard View -->
-        <div id="dashboard-view" class="view">
-            <div class="container my-4">
-                <h2 class="mb-4">ပင်မစာမျက်နှာ</h2>
-                <div class="row">
-                    <!-- 2D Stats -->
-                    <div class="col-md-4 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">2D အချက်အလက်</h5>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <p class="mb-1">စုစုပေါင်းရောင်းအား</p>
-                                        <h3 class="mb-0" id="total2DSales">0 ကျပ်</h3>
-                                    </div>
-                                    <i class="bi bi-graph-up text-primary fs-1"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 3D Stats -->
-                    <div class="col-md-4 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">3D အချက်အလက်</h5>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <p class="mb-1">စုစုပေါင်းရောင်းအား</p>
-                                        <h3 class="mb-0" id="total3DSales">0 ကျပ်</h3>
-                                    </div>
-                                    <i class="bi bi-graph-up text-success fs-1"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Member Stats -->
-                    <div class="col-md-4 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">အကောင့်အချက်အလက်</h5>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <p class="mb-1">စုစုပေါင်း အကောင့်</p>
-                                        <h3 class="mb-0" id="totalMembers">0 ဦး</h3>
-                                    </div>
-                                    <i class="bi bi-people text-info fs-1"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activity -->
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">နောက်ဆုံးရောင်းအား</h5>
-                                <div class="table-responsive">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>အမျိုးအစား</th>
-                                                <th>နံပါတ်</th>
-                                                <th>ငွေပမာဏ</th>
-                                                <th>အချိန်</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="recentSales">
-                                            <!-- Recent sales will be loaded here -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">နောက်ဆုံးလုပ်ဆောင်ချက်များ</h5>
-                                <div id="recentActivity">
-                                    <!-- Recent activity will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>အချိန်</th>
+                                <th>အသုံးပြုသူ</th>
+                                <th>ငွေပမာဏ</th>
+                                <th>ဖုန်းနံပါတ်</th>
+                                <th>ငွေလွှဲနည်း</th>
+                                <th>အခြေအနေ</th>
+                                <th>လုပ်ဆောင်ချက်</th>
+                            </tr>
+                        </thead>
+                        <tbody id="depositsTable"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- 2D Management View -->
-        <div id="2d-view" class="view">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">Add 2D Result</h3>
+        <!-- Results Section -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>ထွက်ဂဏန်းများ</h5>
+                <button class="btn btn-primary" id="addResultBtn">Add Result</button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Number</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTable"></tbody>
+                    </table>
                 </div>
-                <div class="card-body">
-                    <form id="add2DForm">
+            </div>
+        </div>
+
+        <!-- Bets Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>လောင်းကစားမှတ်တမ်းများ</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>User</th>
+                                <th>Type</th>
+                                <th>Number</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="betsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Proof Modal -->
+    <div class="modal fade" id="viewProofModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">ငွေလွှဲပြေစာ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="proofImage" class="img-fluid" src="" alt="Payment Proof">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Result Modal -->
+    <div class="modal fade" id="addResultModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Result</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addResultForm">
                         <div class="mb-3">
-                            <label class="form-label">Date</label>
-                            <input type="date" class="form-control" id="2d-date" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Time</label>
-                            <select class="form-control" id="2d-time" required>
-                                <option value="11:00">11:00 AM</option>
-                                <option value="16:30">4:30 PM</option>
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="resultType">
+                                <option value="2D">2D</option>
+                                <option value="3D">3D</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Number</label>
-                            <input type="text" class="form-control" id="2d-number" pattern="[0-9]{2}" maxlength="2" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Set</label>
-                            <input type="number" class="form-control" id="2d-set" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Value</label>
-                            <input type="number" class="form-control" id="2d-value" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Add 2D Result</button>
-                    </form>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">Manage 2D Results</h3>
-                </div>
-                <div class="card-body">
-                    <table id="manage2D" class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>နေ့စွဲ</th>
-                                <th>အချိန်</th>
-                                <th>နံပါတ်</th>
-                                <th>စက်</th>
-                                <th>တန်ဖိုး</th>
-                                <th>လုပ်ဆောင်ချက်</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- 3D Management View -->
-        <div id="3d-view" class="view">
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h3 class="card-title mb-0">Add 3D Result</h3>
-                </div>
-                <div class="card-body">
-                    <form id="add3DForm">
-                        <div class="mb-3">
-                            <label class="form-label">Date</label>
-                            <input type="date" class="form-control" id="3d-date" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Number</label>
-                            <input type="text" class="form-control" id="3d-number" pattern="[0-9]{3}" maxlength="3" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Set</label>
-                            <input type="number" class="form-control" id="3d-set" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Value</label>
-                            <input type="number" class="form-control" id="3d-value" required>
-                        </div>
-                        <button type="submit" class="btn btn-success">Add 3D Result</button>
-                    </form>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h3 class="card-title mb-0">Manage 3D Results</h3>
-                </div>
-                <div class="card-body">
-                    <table id="manage3D" class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>နေ့စွဲ</th>
-                                <th>နံပါတ်</th>
-                                <th>စက်</th>
-                                <th>တန်ဖိုး</th>
-                                <th>လုပ်ဆောင်ချက်</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Transaction Management View -->
-        <div id="transactions-view" class="view">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">ငွေလွှဲမှတ်တမ်း အသစ်ထည့်ရန်</h3>
-                </div>
-                <div class="card-body">
-                    <form id="addTransactionForm">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">နေ့စွဲ</label>
-                                    <input type="date" class="form-control" id="transaction-date" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">အမည်</label>
-                                    <input type="text" class="form-control" id="transaction-name" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">ဖုန်းနံပါတ်</label>
-                                    <input type="tel" class="form-control" id="transaction-phone" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">ငွေပေးချေမှုနည်းလမ်း</label>
-                                    <select class="form-control" id="transaction-payment-method" required>
-                                        <option value="">ရွေးချယ်ပါ</option>
-                                        <option value="kpay">KBZ Pay</option>
-                                        <option value="wavepay">Wave Pay</option>
-                                        <option value="cbpay">CB Pay</option>
-                                        <option value="ayapay">AYA Pay</option>
-                                        <option value="bank">Bank Transfer</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">ငွေပမာဏ</label>
-                                    <input type="number" class="form-control" id="transaction-amount" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">အမျိုးအစား</label>
-                                    <select class="form-control" id="transaction-type" required>
-                                        <option value="">ရွေးချယ်ပါ</option>
-                                        <option value="deposit">ငွေသွင်း</option>
-                                        <option value="withdraw">ငွေထုတ်</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">မှတ်ချက်</label>
-                            <textarea class="form-control" id="transaction-note" rows="2"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">ထည့်သွင်းမည်</button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">ငွေလွှဲမှတ်တမ်းများ</h3>
-                </div>
-                <div class="card-body">
-                    <table id="manageTransactions" class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>နေ့စွဲ</th>
-                                <th>အမည်</th>
-                                <th>ဖုန်းနံပါတ်</th>
-                                <th>ငွေပေးချေမှုနည်းလမ်း</th>
-                                <th>ငွေပမာဏ</th>
-                                <th>အမျိုးအစား</th>
-                                <th>မှတ်ချက်</th>
-                                <th>လုပ်ဆောင်ချက်</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Members Management View -->
-        <div id="members-view" class="view">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">အကောင့်အသစ်ထည့်ရန်</h3>
-                </div>
-                <div class="card-body">
-                    <form id="addMemberForm">
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="member-email" class="form-label">အီးမေးလ်</label>
-                                <input type="email" class="form-control" id="member-email" required>
-                                <div class="form-text">တရားဝင် အီးမေးလ်လိပ်စာ ဖြစ်ရပါမည်</div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="member-password" class="form-label">စကားဝှက်</label>
-                                <input type="password" class="form-control" id="member-password" required minlength="6">
-                                <div class="form-text">အနည်းဆုံး စာလုံး ၆ လုံး လိုအပ်ပါသည်</div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="member-confirm-password" class="form-label">စကားဝှက် အတည်ပြုရန်</label>
-                                <input type="password" class="form-control" id="member-confirm-password" required>
-                                <div class="form-text text-danger" id="password-match-error" style="display: none;">
-                                    စကားဝှက် မတူညီပါ
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="member-role" class="form-label">အဆင့်</label>
-                                <select class="form-select" id="member-role" required>
-                                    <option value="">ရွေးချယ်ပါ</option>
-                                    <option value="ဒိုင်ချုပ်">ဒိုင်ချုပ်</option>
-                                    <option value="ဂုတ်စီး">ဂုတ်စီး</option>
-                                    <option value="ရောင်းသား">ရောင်းသား</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <button type="submit" class="btn btn-primary">ထည့်သွင်းမည်</button>
+                            <input type="text" class="form-control" id="resultNumber">
                         </div>
                     </form>
                 </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">အကောင့်များ</h3>
-                </div>
-                <div class="card-body">
-                    <table id="manageMembers" class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>အီးမေးလ်</th>
-                                <th>အဆင့်</th>
-                                <th>အခြေအနေ</th>
-                                <th>ထည့်သွင်းသည့်နေ့</th>
-                                <th>လုပ်ဆောင်ချက်</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveResultBtn">Save</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Login Form -->
-    <div class="container my-4" id="loginContainer">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h3 class="card-title mb-0">Admin အကောင့်ဝင်ရန်</h3>
-                    </div>
-                    <div class="card-body">
-                        <form id="loginForm">
-                            <div class="mb-3">
-                                <label for="email" class="form-label">အီးမေးလ်</label>
-                                <input type="email" class="form-control" id="email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">စကားဝှက်</label>
-                                <input type="password" class="form-control" id="password" required>
-                            </div>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">ဝင်ရောက်မည်</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Notification sound -->
+    <audio id="notificationSound" preload="auto">
+        <source src="notification.mp3" type="audio/mpeg">
+    </audio>
 
-    <!-- Bootstrap and jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script type="module" src="js/admin.js"></script>
-    <style>
-        .view {
-            display: none;
+    <script type="module">
+        import { supabase } from './js/config.js';
+
+        let newDepositsCount = 0;
+        let lastCheckTime = new Date();
+
+        // Load deposits
+        async function loadDeposits(status = 'pending') {
+            const { data, error } = await supabase
+                .from('deposits')
+                .select(`
+                    *,
+                    users (name)
+                `)
+                .eq('status', status)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading deposits:', error);
+                return;
+            }
+
+            const tableBody = document.getElementById('depositsTable');
+            tableBody.innerHTML = '';
+
+            data.forEach(deposit => {
+                const row = document.createElement('tr');
+                const isNew = new Date(deposit.created_at) > lastCheckTime;
+                if (isNew) row.classList.add('deposit-new');
+                
+                row.innerHTML = `
+                    <td>${formatDateTime(deposit.created_at)}</td>
+                    <td>${deposit.users?.name || 'Unknown'}</td>
+                    <td>${formatMoney(deposit.amount)}</td>
+                    <td>${deposit.phone_number}</td>
+                    <td>${getPaymentMethodText(deposit.payment_method)}</td>
+                    <td>
+                        <span class="badge bg-${getStatusBadgeClass(deposit.status)}">
+                            ${getStatusText(deposit.status)}
+                        </span>
+                    </td>
+                    <td>
+                        ${deposit.status === 'pending' ? `
+                            <button class="btn btn-sm btn-success me-1" onclick="approveDeposit(${deposit.id})">
+                                <i class="bi bi-check-circle"></i> အတည်ပြုမည်
+                            </button>
+                            <button class="btn btn-sm btn-danger me-1" onclick="rejectDeposit(${deposit.id})">
+                                <i class="bi bi-x-circle"></i> ငြင်းပယ်မည်
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-primary" onclick="viewProof('${deposit.proof_image}')">
+                            <i class="bi bi-image"></i> ပြေစာကြည့်မည်
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
         }
-        .view.active {
-            display: block;
+
+        // Load results
+        async function loadResults() {
+            const { data: results2d } = await supabase
+                .from('results_2d')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            const { data: results3d } = await supabase
+                .from('results_3d')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            const tableBody = document.getElementById('resultsTable');
+            tableBody.innerHTML = '';
+
+            [...(results2d || []), ...(results3d || [])].forEach(result => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(result.created_at).toLocaleDateString()}</td>
+                    <td>${result.type || '2D'}</td>
+                    <td>${result.number}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary">Edit</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
         }
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
+
+        // Load bets
+        async function loadBets() {
+            const { data, error } = await supabase
+                .from('bets')
+                .select('*, users(name)')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading bets:', error);
+                return;
+            }
+
+            const tableBody = document.getElementById('betsTable');
+            tableBody.innerHTML = '';
+
+            data.forEach(bet => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(bet.created_at).toLocaleDateString()}</td>
+                    <td>${bet.users?.name || 'Unknown'}</td>
+                    <td>${bet.type}</td>
+                    <td>${bet.number}</td>
+                    <td>${bet.amount}</td>
+                    <td>${bet.status}</td>
+                `;
+                tableBody.appendChild(row);
+            });
         }
-        .activity-icon i {
-            font-size: 1.2rem;
+
+        // Subscribe to new deposits
+        function subscribeToDeposits() {
+            const depositSubscription = supabase
+                .channel('deposits')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'deposits'
+                }, payload => {
+                    newDepositsCount++;
+                    updateNotificationBadge();
+                    playNotificationSound();
+                    loadDeposits('pending'); // Reload the deposits table
+                })
+                .subscribe();
+
+            return depositSubscription;
         }
-    </style>
+
+        // Update notification badge
+        function updateNotificationBadge() {
+            const badge = document.getElementById('notificationBadge');
+            if (newDepositsCount > 0) {
+                badge.textContent = newDepositsCount;
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+        }
+
+        // Play notification sound
+        function playNotificationSound() {
+            const audio = document.getElementById('notificationSound');
+            audio.play().catch(error => console.log('Error playing sound:', error));
+        }
+
+        // Helper functions
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+        }
+
+        function formatMoney(amount) {
+            return amount.toLocaleString('my-MM', { style: 'currency', currency: 'MMK' });
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'pending': return 'warning';
+                case 'approved': return 'success';
+                case 'rejected': return 'danger';
+                default: return 'secondary';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'pending': return 'စောင့်ဆိုင်းဆဲ';
+                case 'approved': return 'အတည်ပြုပြီး';
+                case 'rejected': return 'ငြင်းပယ်ထား';
+                default: return status;
+            }
+        }
+
+        function getPaymentMethodText(method) {
+            switch (method) {
+                case 'kpay': return 'KBZ Pay';
+                case 'wavepay': return 'Wave Pay';
+                case 'cbpay': return 'CB Pay';
+                case 'ayapay': return 'AYA Pay';
+                default: return method;
+            }
+        }
+
+        // Add result
+        async function addResult() {
+            const type = document.getElementById('resultType').value;
+            const number = document.getElementById('resultNumber').value;
+
+            const table = type === '2D' ? 'results_2d' : 'results_3d';
+            const { error } = await supabase
+                .from(table)
+                .insert([{ number, date: new Date().toISOString() }]);
+
+            if (error) {
+                console.error('Error adding result:', error);
+                return;
+            }
+
+            bootstrap.Modal.getInstance(document.getElementById('addResultModal')).hide();
+            loadResults();
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial load
+            loadDeposits('pending');
+            loadResults();
+            loadBets();
+            
+            // Subscribe to real-time updates
+            const subscription = subscribeToDeposits();
+
+            // Notification button click handler
+            document.getElementById('notificationBtn').addEventListener('click', () => {
+                newDepositsCount = 0;
+                updateNotificationBadge();
+                loadDeposits('pending');
+            });
+
+            // Add Result button
+            document.getElementById('addResultBtn').addEventListener('click', () => {
+                new bootstrap.Modal(document.getElementById('addResultModal')).show();
+            });
+
+            // Save Result button
+            document.getElementById('saveResultBtn').addEventListener('click', addResult);
+
+            // Make functions available globally
+            window.loadDeposits = loadDeposits;
+            window.viewProof = (imageUrl) => {
+                document.getElementById('proofImage').src = `${supabase.storageUrl}/object/public/uploads/${imageUrl}`;
+                new bootstrap.Modal(document.getElementById('viewProofModal')).show();
+            };
+            
+            window.approveDeposit = async (id) => {
+                try {
+                    const { data: deposit, error: fetchError } = await supabase
+                        .from('deposits')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (fetchError) throw fetchError;
+
+                    // Update deposit status
+                    const { error: updateError } = await supabase
+                        .from('deposits')
+                        .update({ status: 'approved' })
+                        .eq('id', id);
+
+                    if (updateError) throw updateError;
+
+                    // Update user balance
+                    const { error: balanceError } = await supabase
+                        .from('users')
+                        .update({
+                            balance: supabase.raw(`balance + ${deposit.amount}`)
+                        })
+                        .eq('id', deposit.user_id);
+
+                    if (balanceError) throw balanceError;
+
+                    alert('ငွေသွင်းမှု အတည်ပြုပြီးပါပြီ');
+                    loadDeposits('pending');
+
+                } catch (error) {
+                    console.error('Error approving deposit:', error);
+                    alert('ငွေသွင်းမှု အတည်ပြုရာတွင် အမှားရှိနေပါသည်');
+                }
+            };
+
+            window.rejectDeposit = async (id) => {
+                try {
+                    const { error } = await supabase
+                        .from('deposits')
+                        .update({ status: 'rejected' })
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    alert('ငွေသွင်းမှု ငြင်းပယ်ပြီးပါပြီ');
+                    loadDeposits('pending');
+
+                } catch (error) {
+                    console.error('Error rejecting deposit:', error);
+                    alert('ငွေသွင်းမှု ငြင်းပယ်ရာတွင် အမှားရှိနေပါသည်');
+                }
+            };
+        });
+    </script>
 </body>
 </html>
